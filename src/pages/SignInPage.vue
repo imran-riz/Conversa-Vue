@@ -43,7 +43,7 @@ const signIn = async () => {
 
 <template>
   <div>
-    <h1>Sign In</h1>
+    <h1>Welcome</h1>
     <div>
       <form @keydown.enter="signIn">
         <label for="email address">Email address</label><br>
