@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 
 
 let app = null;
@@ -40,9 +41,43 @@ const addNewUser = async (id, firstName, lastName, birthdate) => {
 
         console.log(`chatapp_firebase.js addNewUser() -> New user added to db.`);
     }
-    catch (e) {
-        console.error(`chatapp_firebase.js addNewUser() -> Failed to add new user to db. Error: ${e.toString()}`);
+    catch (error) {
+        console.error(`chatapp_firebase.js addNewUser() -> Failed to add new user to db. Error: ${error.code}`);
     }
 }
 
-export { initialiseFirebaseApp, getApp, getFirestoreDatabase, addNewUser };
+/**
+ * Returns the current authenticated user
+ */
+const getCurrentUser = () => {
+    return new Promise((resolve, reject) => {
+        const removeListener = onAuthStateChanged(
+            getAuth(),
+            (user) => {
+                resolve(user);
+                removeListener();
+            },
+            reject
+        );
+    });
+}
+
+
+/**
+ * Used to sign the user out of the Firebase app
+ */
+const signOutUser = async () => {
+    try {
+        const promise = await signOut(getAuth());
+
+        if (promise) return true;
+    }
+    catch (error) {
+        console.error(`chatapp_firebase.js signOutUser() -> Failed to sign the user out. Error: ${error.code}`);
+    }
+
+    return false;
+}
+
+
+export { initialiseFirebaseApp, getApp, getFirestoreDatabase, addNewUser, getCurrentUser, signOutUser };

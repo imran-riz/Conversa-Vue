@@ -4,22 +4,22 @@ import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import {addNewUser, getFirestoreDatabase} from "../libs/chatapp_firebase.js";
 
 
-const firstNameRef = ref("");
-const lastNameRef = ref("");
-const birthdateRef = ref(null);
-const emailRef = ref("");
-const passwordRef = ref("");
-const validFormRef = computed(() => firstNameRef.value.trim() && lastNameRef.value.trim() && birthdateRef.value && emailRef.value.trim() && passwordRef.value);
-const errorMsgRef = ref("");
+const firstName = ref("");
+const lastName = ref("");
+const birthdate = ref(null);
+const email = ref("");
+const password = ref("");
+const validForm = computed(() => firstName.value.trim() && lastName.value.trim() && birthdate.value && email.value.trim() && password.value);
+const errorMsg = ref("");
 
 const signUp = async () => {
-  if (!validFormRef.value) return;
+  if (!validForm.value) return;
 
-  console.log(`SignUpPage.vue: signUp() -> creating an account with details: \n ${firstNameRef.value} \n ${lastNameRef.value} \n ${birthdateRef.value}`);
+  console.log(`SignUpPage.vue: signUp() -> creating an account with details: \n ${firstName.value} \n ${lastName.value} \n ${birthdate.value}`);
   const auth = getAuth();
 
   try {
-    const userCredentials = await createUserWithEmailAndPassword(auth, emailRef.value.trim(), passwordRef.value);
+    const userCredentials = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value);
 
     console.log("SignUpPage.signUp() -> Auth added successfully.");
 
@@ -27,19 +27,19 @@ const signUp = async () => {
     console.log("SignUpPage.signUp() -> Creating document on Firestore...");
 
     // add a new document to the user collection
-    await addNewUser(emailRef.value, firstNameRef.value, lastNameRef.value, birthdateRef.value);
+    await addNewUser(email.value, firstName.value, lastName.value, birthdate.value);
 
     console.log("SignUpPage.signUp() -> Document for new user created.");
 
-    errorMsgRef.value = "";
+    errorMsg.value = "";
   }
   catch (error) {
     console.error(`SignUpPage.signUp() -> Error during account creation: ${error.code}`);
 
-    errorMsgRef.value = "Oops! Something went wrong.";
+    errorMsg.value = "Oops! Something went wrong.";
 
     if (error.code === "auth/email-already-in-use") {
-      errorMsgRef.value = "That email address is already in use. Try another :)";
+      errorMsg.value = "That email address is already in use. Try another :)";
     }
   }
 }
@@ -52,25 +52,25 @@ const signUp = async () => {
     <div>
       <form @keydown.enter="signUp">
         <label for="first name">First name</label><br>
-        <input type="text" required v-model="firstNameRef"><br><br>
+        <input type="text" required v-model="firstName"><br><br>
 
         <label for="last name">Last name</label><br>
-        <input type="text" required v-model="lastNameRef"><br><br>
+        <input type="text" required v-model="lastName"><br><br>
 
-        <label for="first name">Birthdate</label><br>
-        <input type="date" required v-model="birthdateRef"><br><br>
+        <label for="birthdate">Birthdate</label><br>
+        <input type="date" required v-model="birthdate"><br><br>
 
-        <label for="first name">Email address</label><br>
-        <input type="email" required placeholder="maybe...elon@musk.com" v-model="emailRef"><br><br>
+        <label for="email address">Email address</label><br>
+        <input type="email" required placeholder="maybe...elon@musk.com" v-model="email"><br><br>
 
-        <label for="first name">Password</label><br>
-        <input type="password" required v-model="passwordRef"><br><br><br>
+        <label for="password">Password</label><br>
+        <input type="password" required v-model="password"><br><br><br>
 
-        <input type="button" :disabled="!validFormRef" value="Create" @click="signUp">
+        <input type="button" :disabled="!validForm" value="Create" @click="signUp">
       </form>
     </div>
     <div>
-      <p>{{ errorMsgRef }}</p>
+      <p>{{ errorMsg }}</p>
     </div>
   </div>
 </template>
