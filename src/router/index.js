@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { getCurrentUser } from "../libs/chatapp_firebase.js";
+import { getCurrentUserAuth } from "../services/firebase_auth.js";
 
 const router = createRouter({
     history: createWebHistory(),
@@ -32,7 +32,11 @@ router.beforeEach(async (to, from, next) => {
     if (to.matched.some((record) => record.meta.requiresAuth)) {
         console.log("router/index.js -> Requires auth...");
 
-        const user = await getCurrentUser();
+        const user = await getCurrentUserAuth();
+
+        console.log("user is:");
+        console.log(user);
+
 
         if (user) {
             console.log(`router/index.js -> User signed in: ${user.email}. Going to page: ${to.path}`);

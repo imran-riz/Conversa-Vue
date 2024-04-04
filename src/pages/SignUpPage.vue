@@ -1,7 +1,7 @@
 <script setup>
-import {computed, ref} from "vue";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import {addNewUser, getFirestoreDatabase} from "../libs/chatapp_firebase.js";
+import { computed, ref } from "vue";
+import { addNewUserAuth } from "../services/firebase_auth.js";
+import { addNewUser} from "../services/firebase_firestore.js";
 
 
 const firstName = ref("");
@@ -9,32 +9,31 @@ const lastName = ref("");
 const birthdate = ref(null);
 const email = ref("");
 const password = ref("");
-const validForm = computed(() => firstName.value.trim() && lastName.value.trim() && birthdate.value && email.value.trim() && password.value);
 const errorMsg = ref("");
+const validForm = computed(() => firstName.value.trim() && lastName.value.trim() && birthdate.value && email.value.trim() && password.value);
+
+
 
 const signUp = async () => {
   if (!validForm.value) return;
 
-  console.log(`SignUpPage.vue: signUp() -> creating an account with details: \n ${firstName.value} \n ${lastName.value} \n ${birthdate.value}`);
-  const auth = getAuth();
+  console.log(`SignUpPage.signUp() -> creating a new account...`);
 
   try {
-    const userCredentials = await createUserWithEmailAndPassword(auth, email.value.trim(), password.value);
+    // first add a new auth
+    await addNewUserAuth(email.value, password.value);
+    console.log("SignUpPage.signUp() -> Auth added successfully.  Creating a user doc on Firestore...");
 
-    console.log("SignUpPage.signUp() -> Auth added successfully.");
-
-
-    console.log("SignUpPage.signUp() -> Creating document on Firestore...");
-
-    // add a new document to the user collection
-    await addNewUser(email.value, firstName.value, lastName.value, birthdate.value);
-
-    console.log("SignUpPage.signUp() -> Document for new user created.");
-
+    // then, add a new document to the user collection
+    await addNewUser(email.value, firstName.value, lastName.value, birthdate.value)
     errorMsg.value = "";
+    console.log("SignUpPage.signUp() -> Document for new user created. Account creation successful!");
+
+    alert("Account created!");
   }
   catch (error) {
-    console.error(`SignUpPage.signUp() -> Error during account creation: ${error.code}`);
+    console.error(`SignUpPage.signUp() -> Error during account creation:`);
+    console.error(error);
 
     errorMsg.value = "Oops! Something went wrong.";
 
@@ -77,5 +76,4 @@ const signUp = async () => {
 
 
 <style scoped>
-
 </style>

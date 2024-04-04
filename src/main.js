@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import './style.css';
 import App from './App.vue';
 import router from "./router/index.js";
-import { initialiseFirebaseApp } from "./libs/chatapp_firebase.js";
+import { initialiseFirebaseApp } from "./services/firebase.js";
 
 // initialise Firebase dependencies
 initialiseFirebaseApp();

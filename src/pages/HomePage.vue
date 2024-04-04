@@ -1,9 +1,21 @@
 <script setup>
+import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
-import { signOutUser } from "../libs/chatapp_firebase.js";
+import {addDoc, collection, getDocs, or, orderBy, query, where} from "firebase/firestore";
+import {getAllMessages, getFirestoreDatabase, getUserDetailsWithEmail} from "../services/firebase_firestore.js";
+import {getCurrentUserAuth, signOutUser} from "../services/firebase_auth.js";
 
 
 const router = useRouter();
+
+let currentUserAuth = null;
+let sender = null;
+let recipient = null;
+
+const searchEmail = ref("");
+const userFound = ref("");
+const textMsg = ref("");
+const messages = ref([]);
 
 
 const signOutOfAccount = () => {
@@ -17,7 +29,73 @@ const signOutOfAccount = () => {
     console.error(`HomePage.signOutOfAccount -> Failed to sign out of account.`);
   }
 }
+
+
+const searchUser = async (targetEmail) => {
+  if (targetEmail.trim() === "") return;
+
+  console.log(`HomePage.searchUser -> searching for user with email: ${targetEmail}`);
+
+  const userData = await getUserDetailsWithEmail(targetEmail);
+
+  if (!userData) {
+    console.log(`HomePage.searchUser -> user not found.`);
+    userFound.value = "There's nobody with that email address.";
+  }
+  else {
+    userFound.value = "Found";
+    recipient = userData;
+
+    console.log(`HomePage.searchUser -> user found with data:`);
+    console.log(userData);
+  }
+}
+
+
+const loadAllMessages = async () => {
+  if (!recipient) return;
+
+  messages.value = await getAllMessages(sender.id, recipient.id);
+
+  console.log(`HomePage.loadAllMessages -> messages between ${sender.first_name} and ${recipient.first_name}:`);
+  console.log(messages.value);
+}
+
+
+const sendMessage = async () => {
+  if (!recipient) return;
+
+  console.log(`HomePage.sendMessage() -> attempting to send a message...`);
+
+  const messageDoc = {
+    sent_on: new Date().toLocaleString(),
+    text_message: textMsg.value.trim(),
+    sender_id: sender.id,
+    recipient_id: recipient.id,
+  }
+
+  console.log(`HomePage.sendMessage() -> message to ${recipient.email} from ${sender.email}. The message doc:`);
+  console.log(messageDoc);
+
+  console.log(`HomePage.sendMessage() -> adding document to database...`);
+  try {
+    await addDoc(collection(getFirestoreDatabase(), "messages"), messageDoc);
+    textMsg.value = "";
+
+    console.log(`HomePage.sendMessage() -> new message doc added to db.`);
+  }
+  catch (error) {
+    console.error(`HomePage.sendMessage() -> failed to add message doc to db. Error: ${error.code}`);
+  }
+}
+
+
+onBeforeMount(async () => {
+  currentUserAuth = await getCurrentUserAuth();
+  sender = await getUserDetailsWithEmail(currentUserAuth.email);
+});
 </script>
+
 
 <template>
   <div>
@@ -26,6 +104,35 @@ const signOutOfAccount = () => {
     </div>
     <div>
       <button @click="signOutOfAccount">Sign Out</button>
+    </div>
+
+    <br><br>
+    <div>
+        Message to: <input type="email" v-model="searchEmail" @keydown.enter="searchUser(searchEmail)">
+        <button @click="searchUser(searchEmail)">Search</button>
+        <br><label>{{ userFound }}</label>
+    </div>
+
+    <br><br>
+
+    <div>
+      <label for="">Your message</label><br>
+      <textarea v-model="textMsg"></textarea>
+      <button @click="sendMessage">Send</button>
+    </div>
+
+    <div style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
+      <div
+          style="border: 1px solid gray; margin: 1px"
+          v-for="message in messages"
+      >
+        <p>
+          {{ message.text_message }}
+        </p>
+      </div>
+    </div>
+    <div>
+      <button @click="loadAllMessages">Refresh Messages</button>
     </div>
 
   </div>

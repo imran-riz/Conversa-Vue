@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from "vue";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { useRouter } from "vue-router";
+import { signIn } from "../services/firebase_auth.js";
 
 const router = useRouter();
 
@@ -12,21 +12,19 @@ const validForm = computed(() => email.value.trim() && password.value);
 const errorMsg = ref("");
 
 
-const signIn = async () => {
+const signInToAccount = async () => {
   console.log(`SignInPage.signIn() -> User attempts to sign in...`);
 
   try {
-    const userCredentials = await signInWithEmailAndPassword(getAuth(), email.value.trim(), password.value);
-    console.log(`SignInPage.signIn() -> User successfully signed in to account. Directing to HomePage.`);
+    const userCredentials = await signIn(email.value, password.value);
 
+    console.log(`SignInPage.signIn() -> User successfully signed in to account. Directing to HomePage.`);
     errorMsg.value = "";
 
     // direct user to HomePage
     await router.push("/home");
   }
   catch (error) {
-    console.error(`SignInPage.signIn() -> Error during user sign in: ${error.code}`);
-
     if (error.code === "auth/user-disabled") {
       errorMsg.value = "Account disabled. Contact admin.";
     }
@@ -45,14 +43,14 @@ const signIn = async () => {
   <div>
     <h1>Welcome</h1>
     <div>
-      <form @keydown.enter="signIn">
+      <form @keydown.enter="signInToAccount">
         <label for="email address">Email address</label><br>
         <input type="email" required placeholder="maybe...elon@musk.com" v-model="email"><br><br>
 
         <label for="password">Password</label><br>
         <input type="password" required v-model="password"><br><br><br>
 
-        <input type="button" :disabled="!validForm" value="Sign In" @click="signIn">
+        <input type="button" :disabled="!validForm" value="Sign In" @click="signInToAccount">
       </form>
     </div>
     <div>
