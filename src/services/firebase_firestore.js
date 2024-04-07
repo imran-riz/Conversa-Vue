@@ -16,9 +16,11 @@ const addNewUser = async (email, firstName, lastName, birthdate) => {
     };
 
     try {
+        const docRef = await addDoc(collection(db, "users"), userDoc);
+
         console.log(`chatapp_firebase.js addNewUser() -> user doc added. Doc reference returned.`);
 
-        return await addDoc(collection(db, "users"), userDoc);
+        return docRef;
     } catch (error) {
         throw error;
     }
@@ -45,8 +47,18 @@ const getUserDetailsWithEmail = async (targetEmail) => {
 }
 
 
-const addNewMessage = async () => {
+const addNewMessage = async (messageDoc) => {
+    console.log(`firebase_firestore.js addNewMessage() -> adding a new message to the database...`);
 
+    try {
+        const refDoc = await addDoc(collection(db, "messages"), messageDoc);
+
+        console.log(`firebase_firestore.hs addNewMessage() -> message doc added to db! Doc ref returned.`);
+
+        return refDoc;
+    } catch (error) {
+        throw error;
+    }
 }
 
 

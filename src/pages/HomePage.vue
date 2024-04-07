@@ -1,9 +1,8 @@
 <script setup>
 import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
-import {addDoc, collection, getDocs, or, orderBy, query, where} from "firebase/firestore";
-import {getAllMessages, getFirestoreDatabase, getUserDetailsWithEmail} from "../services/firebase_firestore.js";
-import {getCurrentUserAuth, signOutUser} from "../services/firebase_auth.js";
+import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
+import { addNewMessage, getAllMessages, getUserDetailsWithEmail } from "../services/firebase_firestore.js";
 
 
 const router = useRouter();
@@ -74,15 +73,13 @@ const sendMessage = async () => {
     recipient_id: recipient.id,
   }
 
-  console.log(`HomePage.sendMessage() -> message to ${recipient.email} from ${sender.email}. The message doc:`);
-  console.log(messageDoc);
-
-  console.log(`HomePage.sendMessage() -> adding document to database...`);
   try {
-    await addDoc(collection(getFirestoreDatabase(), "messages"), messageDoc);
+    const docRef = await addNewMessage(messageDoc);
     textMsg.value = "";
+    messages.value.push(messageDoc);
 
-    console.log(`HomePage.sendMessage() -> new message doc added to db.`);
+    console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
+    console.log(docRef);
   }
   catch (error) {
     console.error(`HomePage.sendMessage() -> failed to add message doc to db. Error: ${error.code}`);
