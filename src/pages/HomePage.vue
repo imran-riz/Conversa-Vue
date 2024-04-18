@@ -1,8 +1,11 @@
 <script setup>
 import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
+import { getApp } from "../services/firebase.js";
+import { collection, getFirestore, onSnapshot, or, and, orderBy, query, where} from "firebase/firestore";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
-import { addNewMessage, getAllMessages, getUserDetailsWithEmail } from "../services/firebase_firestore.js";
+import { addNewMessage, getUserDetailsWithEmail } from "../services/firebase_firestore.js";
+
 
 
 const router = useRouter();
@@ -10,6 +13,7 @@ const router = useRouter();
 let currentUserAuth = null;
 let sender = null;
 let recipient = null;
+let unsubscribe = null;
 
 const searchEmail = ref("");
 const userFound = ref("");
@@ -17,6 +21,9 @@ const textMsg = ref("");
 const messages = ref([]);
 
 
+/**
+ * Used to sign out the current user account from the Firebase account
+ */
 const signOutOfAccount = () => {
   console.log("HomePage.signOutOfAccount -> signing out...");
 
@@ -30,6 +37,10 @@ const signOutOfAccount = () => {
 }
 
 
+/**
+ * Used to search for a user
+ * @param targetEmail Email of the user to search for
+ */
 const searchUser = async (targetEmail) => {
   if (targetEmail.trim() === "") return;
 
@@ -51,16 +62,71 @@ const searchUser = async (targetEmail) => {
 }
 
 
-const loadAllMessages = async () => {
+// const loadAllMessages = async () => {
+//   if (!recipient) return;
+//
+//   messages.value = await getAllMessages(sender.id, recipient.id);
+//
+//   console.log(`HomePage.loadAllMessages -> messages between ${sender.first_name} and ${recipient.first_name}:`);
+//   console.log(messages.value);
+// }
+
+
+/**
+ * Registers a message listener between the current sender and recipient. By doing so, all updates made in the firestore db
+ * is fetched in real-time.
+ */
+const registerMessageListener = () => {
   if (!recipient) return;
 
-  messages.value = await getAllMessages(sender.id, recipient.id);
+  console.log(`HomePage.registerMessageListener -> registering a listener for messages from ${recipient.email}...`);
 
-  console.log(`HomePage.loadAllMessages -> messages between ${sender.first_name} and ${recipient.first_name}:`);
-  console.log(messages.value);
+  if (unsubscribe) {
+    unsubscribe();
+    messages.value.length = 0;
+  }
+
+  const db = getFirestore(getApp);
+  const messagesCollection = collection(db, "messages");
+
+  const q = query(
+      messagesCollection,
+      or(
+          and(
+            where("sender_id", "==", sender.id),
+            where("recipient_id", "==", recipient.id)
+          ),
+          and(
+              where("sender_id", "==", recipient.id),
+              where("recipient_id", "==", sender.id)
+          ),
+      ),
+      orderBy("sent_on", "asc")
+  );
+
+  unsubscribe = onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "added") {
+        messages.value.push(
+            {
+              id: change.doc.id,
+              ...change.doc.data()
+            }
+        );
+
+        console.log(`HomePage.registerMessageListener -> change detected. Messages:`);
+        console.log(messages.value);
+      }
+    });
+  });
+
+  console.log(`HomePage.registerMessageListener -> listener registered.`);
 }
 
 
+/**
+ * Used to send a message to another user
+ */
 const sendMessage = async () => {
   if (!recipient) return;
 
@@ -76,7 +142,6 @@ const sendMessage = async () => {
   try {
     const docRef = await addNewMessage(messageDoc);
     textMsg.value = "";
-    messages.value.push(messageDoc);
 
     console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
     console.log(docRef);
@@ -99,6 +164,7 @@ onBeforeMount(async () => {
     <div>
       <h1>Home</h1>
     </div>
+
     <div>
       <button @click="signOutOfAccount">Sign Out</button>
     </div>
@@ -119,8 +185,7 @@ onBeforeMount(async () => {
     </div>
 
     <div style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
-      <div
-          style="border: 1px solid gray; margin: 1px"
+      <div style="border: 1px solid gray; margin: 1px"
           v-for="message in messages"
       >
         <p>
@@ -128,12 +193,14 @@ onBeforeMount(async () => {
         </p>
       </div>
     </div>
-    <div>
-      <button @click="loadAllMessages">Refresh Messages</button>
-    </div>
 
+    <div>
+      <button @click="registerMessageListener">Load All Messages</button>
+    </div>
   </div>
 </template>
+
+
 
 <style scoped>
 

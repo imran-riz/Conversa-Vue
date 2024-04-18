@@ -1,9 +1,9 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, or, orderBy, query, where } from "firebase/firestore";
+import { addDoc, collection, getDocs, getFirestore, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
 
-
+const MESSAGES = [];
 const db = getFirestore(getApp());
-
+let unsubscribe = null;
 
 const addNewUser = async (email, firstName, lastName, birthdate) => {
     console.log(`chatapp_firebase.js addNewUser() -> adding a new user to the database...`);
@@ -100,10 +100,44 @@ const getAllMessages = async (senderId, recipientId) => {
 }
 
 
+const registerMessageListener = (senderId, recipientId) => {
+    if (unsubscribe) unsubscribe();
+
+    const messagesCollection = collection(db, "messages");
+
+    const q = query(
+        messagesCollection,
+        or(
+            where("sender_id", "==", senderId),
+            where("recipient_id", "==", recipientId)
+        )
+    );
+
+    unsubscribe = onSnapshot(q, (snapshot) => {
+        MESSAGES.length = 0;
+
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                MESSAGES.push(
+                    {
+                        id: change.doc.id,
+                        ...change.doc.data()
+                    }
+                );
+
+                // console.log("messages changed:");
+                // console.log(MESSAGES);
+            }
+        });
+    });
+}
+
 
 export {
     addNewUser,
     getUserDetailsWithEmail,
     addNewMessage,
-    getAllMessages
+    getAllMessages,
+    registerMessageListener,
+    MESSAGES,
 };

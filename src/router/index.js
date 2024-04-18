@@ -34,9 +34,8 @@ router.beforeEach(async (to, from, next) => {
 
         const user = await getCurrentUserAuth();
 
-        console.log("user is:");
+        console.log(`user is: `);
         console.log(user);
-
 
         if (user) {
             console.log(`router/index.js -> User signed in: ${user.email}. Going to page: ${to.path}`);
