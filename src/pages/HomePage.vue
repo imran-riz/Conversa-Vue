@@ -2,7 +2,7 @@
 import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getApp } from "../services/firebase.js";
-import { collection, getFirestore, onSnapshot, or, and, orderBy, query, where} from "firebase/firestore";
+import { collection, getFirestore, onSnapshot, or, and, orderBy, query, where } from "firebase/firestore";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
 import { addNewMessage, getUserDetailsWithEmail } from "../services/firebase_firestore.js";
 

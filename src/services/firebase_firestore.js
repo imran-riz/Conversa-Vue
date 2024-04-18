@@ -1,5 +1,5 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
 
 const MESSAGES = [];
 const db = getFirestore(getApp());
@@ -108,8 +108,14 @@ const registerMessageListener = (senderId, recipientId) => {
     const q = query(
         messagesCollection,
         or(
-            where("sender_id", "==", senderId),
-            where("recipient_id", "==", recipientId)
+            and(
+                where("sender_id", "==", senderId),
+                where("recipient_id", "==", recipientId)
+            ),
+            and(
+                where("sender_id", "==", recipientId),
+                where("recipient_id", "==", senderId)
+            )
         )
     );
 
