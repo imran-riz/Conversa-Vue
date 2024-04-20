@@ -1,10 +1,8 @@
 <script setup>
 import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
-import { getApp } from "../services/firebase.js";
-import { collection, getFirestore, onSnapshot, or, and, orderBy, query, where} from "firebase/firestore";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
-import { addNewMessage, getUserDetailsWithEmail } from "../services/firebase_firestore.js";
+import { addNewMessage, getUserDetailsWithEmail, registerMessageListener, messages } from "../services/firebase_firestore.js";
 
 
 
@@ -13,12 +11,11 @@ const router = useRouter();
 let currentUserAuth = null;
 let sender = null;
 let recipient = null;
-let unsubscribe = null;
 
 const searchEmail = ref("");
 const userFound = ref("");
 const textMsg = ref("");
-const messages = ref([]);
+// const messages = ref([]);
 
 
 /**
@@ -62,65 +59,12 @@ const searchUser = async (targetEmail) => {
 }
 
 
-// const loadAllMessages = async () => {
-//   if (!recipient) return;
-//
-//   messages.value = await getAllMessages(sender.id, recipient.id);
-//
-//   console.log(`HomePage.loadAllMessages -> messages between ${sender.first_name} and ${recipient.first_name}:`);
-//   console.log(messages.value);
-// }
-
-
-/**
- * Registers a message listener between the current sender and recipient. By doing so, all updates made in the firestore db
- * is fetched in real-time.
- */
-const registerMessageListener = () => {
+const loadAllMessages = () => {
   if (!recipient) return;
 
-  console.log(`HomePage.registerMessageListener -> registering a listener for messages from ${recipient.email}...`);
-
-  if (unsubscribe) {
-    unsubscribe();
-    messages.value.length = 0;
-  }
-
-  const db = getFirestore(getApp);
-  const messagesCollection = collection(db, "messages");
-
-  const q = query(
-      messagesCollection,
-      or(
-          and(
-            where("sender_id", "==", sender.id),
-            where("recipient_id", "==", recipient.id)
-          ),
-          and(
-              where("sender_id", "==", recipient.id),
-              where("recipient_id", "==", sender.id)
-          ),
-      ),
-      orderBy("sent_on", "asc")
-  );
-
-  unsubscribe = onSnapshot(q, (snapshot) => {
-    snapshot.docChanges().forEach((change) => {
-      if (change.type === "added") {
-        messages.value.push(
-            {
-              id: change.doc.id,
-              ...change.doc.data()
-            }
-        );
-
-        console.log(`HomePage.registerMessageListener -> change detected. Messages:`);
-        console.log(messages.value);
-      }
-    });
-  });
-
-  console.log(`HomePage.registerMessageListener -> listener registered.`);
+  registerMessageListener(sender.id, recipient.id);
+  console.log("Messages loaded:");
+  console.log(messages.value);
 }
 
 
@@ -184,7 +128,7 @@ onBeforeMount(async () => {
       <button @click="sendMessage">Send</button>
     </div>
 
-    <div style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
+    <div id="chat_feed" style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
       <div style="border: 1px solid gray; margin: 1px"
           v-for="message in messages"
       >
@@ -195,7 +139,7 @@ onBeforeMount(async () => {
     </div>
 
     <div>
-      <button @click="registerMessageListener">Load All Messages</button>
+      <button @click="loadAllMessages">Load All Messages</button>
     </div>
   </div>
 </template>

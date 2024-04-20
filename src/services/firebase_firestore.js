@@ -1,8 +1,10 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
+import { ref } from "vue";
 
-const MESSAGES = [];
+
 const db = getFirestore(getApp());
+const messages = ref([]);
 let unsubscribe = null;
 
 const addNewUser = async (email, firstName, lastName, birthdate) => {
@@ -62,82 +64,50 @@ const addNewMessage = async (messageDoc) => {
 }
 
 
-const getAllMessages = async (senderId, recipientId) => {
-    console.log(`chatapp_firebase.js getAllMessages -> fetching messages between sender ${senderId} and recipient ${recipientId}...`)
-
-    const messagesCollection = collection(db, "messages");
-    const messagesQuery = query(
-        query(
-            messagesCollection,
-            or(
-                where("sender_id", "==", senderId),
-                where("recipient_id", "==", recipientId)
-            ),
-        ),
-        orderBy("sent_on", "asc")
-    );
-
-    const messagesSnap = await getDocs(messagesQuery);
-
-    if (messagesSnap.empty) {
-        console.log(`chatapp_firebase.js getAllMessages -> no messages!`);
-        return [];
-    }
-
-    console.log(`chatapp_firebase.js getAllMessages -> messages found. Data returned.`);
-
-    const messages = [];
-    messagesSnap.forEach((messageDoc) => {
-        messages.push(
-            {
-                id: messageDoc.id,
-                ...messageDoc.data()
-            }
-        );
-    });
-
-    return messages;
-}
-
-
+/**
+ *
+ * @param senderId
+ * @param recipientId
+ */
 const registerMessageListener = (senderId, recipientId) => {
     if (unsubscribe) unsubscribe();
 
     const messagesCollection = collection(db, "messages");
-
     const q = query(
         messagesCollection,
         or(
-            where("sender_id", "==", senderId),
-            where("recipient_id", "==", recipientId)
-        )
+            and(
+                where("sender_id", "==", senderId),
+                where("recipient_id", "==", recipientId)
+            ),
+            and(
+                where("sender_id", "==", recipientId),
+                where("recipient_id", "==", senderId)
+            )
+        ),
+        orderBy("sent_on", "asc")
     );
 
     unsubscribe = onSnapshot(q, (snapshot) => {
-        MESSAGES.length = 0;
-
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
-                MESSAGES.push(
+                messages.value.push(
                     {
                         id: change.doc.id,
                         ...change.doc.data()
                     }
                 );
-
-                // console.log("messages changed:");
-                // console.log(MESSAGES);
             }
         });
     });
 }
 
 
+
 export {
     addNewUser,
     getUserDetailsWithEmail,
     addNewMessage,
-    getAllMessages,
     registerMessageListener,
-    MESSAGES,
+    messages,
 };
