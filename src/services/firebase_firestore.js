@@ -7,6 +7,7 @@ const db = getFirestore(getApp());
 const messages = ref([]);
 let unsubscribe = null;
 
+
 const addNewUser = async (email, firstName, lastName, birthdate) => {
     console.log(`chatapp_firebase.js addNewUser() -> adding a new user to the database...`);
 
