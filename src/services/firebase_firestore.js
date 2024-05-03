@@ -8,6 +8,14 @@ const messages = ref([]);
 let unsubscribe = null;
 
 
+/**
+ * Adds a new user to the users collection
+ * @param email
+ * @param firstName
+ * @param lastName
+ * @param birthdate
+ * @returns {Promise<DocumentReference<DocumentData, DocumentData>>}
+ */
 const addNewUser = async (email, firstName, lastName, birthdate) => {
    console.log(`chatapp_firebase.js addNewUser() -> adding a new user to the database...`);
 
@@ -30,6 +38,10 @@ const addNewUser = async (email, firstName, lastName, birthdate) => {
 }
 
 
+/**
+ * Returns user details from the users collection
+ * @param targetEmail The email of the user to get the detailss
+ */
 const getUserDetailsWithEmail = async (targetEmail) => {
    console.log(`chatapp_firebase.js getUserDetailsWithEmail() -> retrieving details of user with email: ${targetEmail}`);
 
@@ -75,17 +87,17 @@ const getContactedUsers = async (userId) => {
 }
 
 
-
-const addNewMessage = async (messageDoc, recipient = null) => {
+/**
+ * Adds a new message to the collection
+ * @param messageDoc An object
+ * @returns {Promise<void>}
+ */
+const addNewMessage = async (messageDoc) => {
    console.log(`firebase_firestore.js addNewMessage() -> adding a new message to the database...`);
 
    try {
       const refDoc = await addDoc(collection(db, "messages"), messageDoc);
       console.log(`firebase_firestore.hs addNewMessage() -> message doc added to db!`);
-
-      if (recipient) {
-         // add the recipient's id and email to the users_contacted subcollection stored in the users collection where id = messageDoc.sensder_id
-      }
       
    } catch (error) {
       throw error;
@@ -94,7 +106,24 @@ const addNewMessage = async (messageDoc, recipient = null) => {
 
 
 /**
- *
+ * If the sender (logged-in user) has contacted a new user that's not present in their users_contacted subcollection, t
+ * this function is used to add the new user.
+ * @param senderId The document id of the sender (currently logged-in user)
+ * @param newUserDoc An object that should contain the properties id and email
+ * @returns {Promise<void>}
+ */
+const addUserToUsersContacted = async (senderId, newUserDoc) => {
+   try {
+      const refDoc = await addDoc(collection(db, `users/${senderId}/users_contacted`), newUserDoc);
+      console.log("new contacted user added");
+   } catch (error) {
+      throw error;
+   }
+}
+
+
+/**
+ * Used to add a message listener to get real time updates of messages between 2 users
  * @param senderId
  * @param recipientId
  */
@@ -136,6 +165,7 @@ export {
    addNewUser,
    getUserDetailsWithEmail,
    addNewMessage,
+   addUserToUsersContacted,
    registerMessageListener,
    messages,
 };

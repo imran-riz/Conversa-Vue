@@ -2,7 +2,7 @@
 import { onBeforeMount, ref } from "vue";
 import { useRouter } from "vue-router";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
-import { addNewMessage, getUserDetailsWithEmail, registerMessageListener, messages } from "../services/firebase_firestore.js";
+import { addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages } from "../services/firebase_firestore.js";
 
 
 
@@ -57,7 +57,7 @@ const searchUser = async (targetEmail) => {
       console.log(`HomePage.searchUser -> new recipient:`);
       console.log(recipient);
 
-      loadAllMessages();
+      await loadAllMessages();
    }
 }
 
@@ -68,7 +68,7 @@ const searchUser = async (targetEmail) => {
  */
 const loadAllMessages = async (recipientEmail = null) => {
    if (recipientEmail) recipient = await getUserDetailsWithEmail(recipientEmail);
-   
+
    messages.value = [];
    registerMessageListener(sender.id, recipient.id);
    
@@ -99,6 +99,10 @@ const sendMessage = async () => {
       // added the user to the userContacted list, if not present
       if (!usersContacted.value.find(user => user.id === recipient.id)) {
          usersContacted.value.push(recipient);
+        await addUserToUsersContacted(sender.id, {
+          id: recipient.id,
+          email: recipient.email,
+        });
       }
 
       console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
@@ -141,13 +145,13 @@ onBeforeMount(async () => {
 
       <div>
          <span>Recently contacted</span>
-         <p>
+         <div>
                <ul>
                   <li v-for="user in usersContacted">
                      <button @click="loadAllMessages(user.email)">{{ user.email }}</button>
                   </li>
                </ul>
-         </p>
+         </div>
       </div>
 
       <br><br>
