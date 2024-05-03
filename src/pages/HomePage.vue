@@ -1,21 +1,26 @@
 <script setup>
-import { nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
+import { nextTick, onBeforeMount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
-import { addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages } from "../services/firebase_firestore.js";
-
+import {
+	addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages, deleteAllMessages
+} from "../services/firebase_firestore.js";
+import sendMessageIcon from "/public/icons/send-message-black.svg";
+import { mdiAccount } from '@mdi';
 
 
 const router = useRouter();
 
 let currentUserAuth = null;
 
-const sender = ref({ id: null, email: null, first_name: "", last_name: ""});
-const recipient = ref({ id: null, email: null, first_name: "", last_name: ""});
+const sender = ref({ id: null, email: null, first_name: "", last_name: "", users_contacted: []});
+const recipient = ref({ id: null, email: null, first_name: "", last_name: "", users_contacted: []});
 const searchEmail = ref("");
 const userFound = ref("");
 const newMessage = ref("");
 const usersContacted = ref([]);
+const drawer = ref(true);
+const rail = ref(true);
 
 
 /**
@@ -27,6 +32,7 @@ const signOutOfAccount = () => {
    if (signOutUser()) {
       console.log("HomePage.signOutOfAccount -> User signed out successfully.");
       router.push("/");
+		location.reload();
    }
    else {
       console.error(`HomePage.signOutOfAccount -> Failed to sign out of account.`);
@@ -51,10 +57,10 @@ const searchUser = async (targetEmail) => {
    }
    else {
       userFound.value = "Found";
-      recipient = userData;
+      recipient.value = userData;
 
       console.log(`HomePage.searchUser -> new recipient:`);
-      console.log(recipient);
+      console.log(recipient.value);
 
       await loadAllMessages();
    }
@@ -89,7 +95,8 @@ const loadAllMessages = async (recipientEmail = null) => {
 
 
 /**
- * Used to send a message to another user. If this user does not already exist in the users contacted list, they will be added.
+ * Used to send a message to another user.
+ * If this user does not already exist in the users contacted list, they will be added.
  */
 const sendMessage = async (keyEvent = null) => {
    if (keyEvent?.shiftKey) return;
@@ -135,6 +142,11 @@ const scrollToBottomOfMessageList = () => {
    messageListContainer.scrollTop = messageListContainer.scrollHeight;
 }
 
+const clearAllMessages = async () => {
+	// await deleteAllMessages();
+	// messages.value = [];
+}
+
 
 onBeforeMount(async () => {
    currentUserAuth = await getCurrentUserAuth();
@@ -146,8 +158,18 @@ onBeforeMount(async () => {
 
 <template>
    <v-app class="app">
-      <v-navigation-drawer class="pa-2">
-         <v-list>
+      <v-navigation-drawer
+			class="pa-2"
+			:rail="rail"
+			permanent
+		>
+			<v-btn @click="rail = !rail">=</v-btn>
+
+			<v-list-item>
+				<v-btn>New chat</v-btn>
+			</v-list-item>
+
+         <v-list :hidden="rail">
             <v-list-item v-for="user in usersContacted" :key="user.id"
                :value="user"
                color="primary"
@@ -155,21 +177,24 @@ onBeforeMount(async () => {
                @click="loadAllMessages(user.email)"
                :active="user.email === recipient.email"
             >
-               <v-list-item-title v-text="user.email"></v-list-item-title>
+               <v-list-item-title
+						v-text="user.email"
+					></v-list-item-title>
             </v-list-item>
+				<br>
+				<v-btn
+					class="me-2 text-none"
+					variant="outlined" block color="red"
+					prepend-icon="mdi-logout"
+					@click="signOutOfAccount"
+				>Sign out</v-btn>
          </v-list>
-         <v-btn 
-            class="me-2 text-none" 
-            variant="outlined" block color="red"
-            prepend-icon="mdi-logout"
-            @click="signOutOfAccount"
-         >Sign out</v-btn>
       </v-navigation-drawer>
 
-      <v-app-bar 
-         elevation="1"
-         :title="`${recipient.first_name} ${recipient.last_name}`"
-      ></v-app-bar>
+<!--      <v-app-bar-->
+<!--         elevation="1"-->
+<!--         :title="`${recipient.first_name} ${recipient.last_name}`"-->
+<!--      ></v-app-bar>-->
 
       <v-main>
          <v-container fluid>
@@ -181,7 +206,9 @@ onBeforeMount(async () => {
                            <v-list-item v-for="message in messages" :key="message.id">
                               <v-list-item-title>{{ message.text_message }}</v-list-item-title>
                               <v-list-item-subtitle>
-                                 <strong>{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}</strong> | {{ message.sent_on }}
+                                 <strong>
+												{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}
+											</strong> | {{ message.sent_on }}
                               </v-list-item-subtitle>
                            </v-list-item>
                         </v-list>
@@ -189,15 +216,27 @@ onBeforeMount(async () => {
                      
                      <v-card-actions>
                         <v-textarea
-                           variant="outlined" 
-                           label="New message" 
-                           v-model="newMessage" 
+                           variant="outlined"
+                           label="New message"
+                           v-model="newMessage"
                            rows="1"
                            autogrow
                            style="white-space: pre-line;"
                            @keydown.enter="sendMessage($event)"
-                        ></v-textarea>
-                        <v-btn color="primary" variant="outlined" @click="sendMessage()">Send</v-btn>
+                        >
+									<template #append>
+										<v-btn
+											@click="sendMessage()"
+											color="primary"
+											:disabled="newMessage.trim() === ''"
+										>
+											<v-icon :icon="mdiAccount"></v-icon>
+										</v-btn>
+									</template>
+								</v-textarea>
+<!--                        <v-btn color="primary" variant="outlined" @click="sendMessage()">Send</v-btn>-->
+
+<!--								<v-btn color="red" variant="outlined" @click="clearAllMessages()">Clear all messages</v-btn>-->
                      </v-card-actions>
                   </v-card>
                </v-col>

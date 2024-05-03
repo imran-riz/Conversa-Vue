@@ -5,6 +5,7 @@ import router from "./router/index.js";
 import { initialiseFirebaseApp } from "./services/firebase.js";
 import "vuetify/styles";
 import { createVuetify } from "vuetify";
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg';
 import * as components from "vuetify/components";
 import * as directives from "vuetify/directives";
 
@@ -14,6 +15,13 @@ initialiseFirebaseApp();
 const vuetify = createVuetify({
    components,
    directives,
+   icons: {
+      iconfont: "mdiSvg",
+      values: {
+         ...aliases,
+         ...mdi,
+      },
+   },
 });
 
 const app = createApp(App);
