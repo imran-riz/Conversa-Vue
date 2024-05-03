@@ -12,8 +12,8 @@ import * as directives from "vuetify/directives";
 initialiseFirebaseApp();
 
 const vuetify = createVuetify({
-  components,
-  directives,
+   components,
+   directives,
 });
 
 const app = createApp(App);

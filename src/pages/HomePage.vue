@@ -124,56 +124,56 @@ onBeforeMount(async () => {
 
 
 <template>
+<div>
    <div>
+      <h1>Home</h1>
+   </div>
+
+   <div>
+      <button @click="signOutOfAccount">Sign Out</button>
+   </div>
+
+   <br><br>
+
+   <div>
+      Message to: <input type="email" v-model="searchEmail" @keydown.enter="searchUser(searchEmail)">
+      <button @click="searchUser(searchEmail)">Search</button>
+      <br><label>{{ userFound }}</label>
+   </div>
+
+   <br><br>
+
+   <div>
+      <span>Recently contacted</span>
       <div>
-         <h1>Home</h1>
-      </div>
-
-      <div>
-         <button @click="signOutOfAccount">Sign Out</button>
-      </div>
-
-      <br><br>
-
-      <div>
-         Message to: <input type="email" v-model="searchEmail" @keydown.enter="searchUser(searchEmail)">
-         <button @click="searchUser(searchEmail)">Search</button>
-         <br><label>{{ userFound }}</label>
-      </div>
-
-      <br><br>
-
-      <div>
-         <span>Recently contacted</span>
-         <div>
-               <ul>
-                  <li v-for="user in usersContacted">
-                     <button @click="loadAllMessages(user.email)">{{ user.email }}</button>
-                  </li>
-               </ul>
-         </div>
-      </div>
-
-      <br><br>
-
-      <div id="chat_feed" style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
-         <div style="border: 1px solid gray; margin: 1px"
-            v-for="message in messages"
-         >
-            <p>
-               {{ message.text_message }}
-            </p>
-         </div>
-      </div>
-
-      <br><br>
-
-      <div>
-         <label for="">Your message</label><br>
-         <textarea v-model="textMsg"></textarea>
-         <button @click="sendMessage">Send</button>
+            <ul>
+               <li v-for="user in usersContacted">
+                  <button @click="loadAllMessages(user.email)">{{ user.email }}</button>
+               </li>
+            </ul>
       </div>
    </div>
+
+   <br><br>
+
+   <div id="chat_feed" style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
+      <div style="border: 1px solid gray; margin: 1px"
+         v-for="message in messages"
+      >
+         <p>
+            {{ message.text_message }}
+         </p>
+      </div>
+   </div>
+
+   <br><br>
+
+   <div>
+      <label for="">Your message</label><br>
+      <textarea v-model="textMsg"></textarea>
+      <button @click="sendMessage">Send</button>
+   </div>
+</div>
 </template>
 
 

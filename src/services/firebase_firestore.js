@@ -135,12 +135,12 @@ const registerMessageListener = (senderId, recipientId) => {
       messagesCollection,
       or(
          and(
-               where("sender_id", "==", senderId),
-               where("recipient_id", "==", recipientId)
+            where("sender_id", "==", senderId),
+            where("recipient_id", "==", recipientId)
          ),
          and(
-               where("sender_id", "==", recipientId),
-               where("recipient_id", "==", senderId)
+            where("sender_id", "==", recipientId),
+            where("recipient_id", "==", senderId)
          )
       ),
       orderBy("sent_on", "asc")
@@ -149,12 +149,12 @@ const registerMessageListener = (senderId, recipientId) => {
    unsubscribe = onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach((change) => {
          if (change.type === "added") {
-               messages.value.push(
-                  {
-                     id: change.doc.id,
-                     ...change.doc.data()
-                  }
-               );
+            messages.value.push(
+               {
+                  id: change.doc.id,
+                  ...change.doc.data()
+               }
+            );
          }
       });
    });
