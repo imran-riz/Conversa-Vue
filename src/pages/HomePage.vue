@@ -10,13 +10,16 @@ const router = useRouter();
 
 let currentUserAuth = null;
 let sender = null;
-let recipient = null;
+let recipient = {
+   id: null,
+   email: null
+};
+let selectedUser = ref(null);
 
 const searchEmail = ref("");
 const userFound = ref("");
-const textMsg = ref("");
+const newMessage = ref("");
 const usersContacted = ref([]);
-// const messages = ref([]);
 
 
 /**
@@ -67,7 +70,12 @@ const searchUser = async (targetEmail) => {
  * @param recipientEmail - Optional. The email of the recipient. Should be provided only when a search is found.
  */
 const loadAllMessages = async (recipientEmail = null) => {
-   if (recipientEmail) recipient = await getUserDetailsWithEmail(recipientEmail);
+   if (recipientEmail) {
+      if (recipientEmail === recipient.email) return;
+
+      recipient = await getUserDetailsWithEmail(recipientEmail);
+   }
+   
 
    messages.value = [];
    registerMessageListener(sender.id, recipient.id);
@@ -87,22 +95,22 @@ const sendMessage = async () => {
 
    const messageDoc = {
       sent_on: new Date().toLocaleString(),
-      text_message: textMsg.value.trim(),
+      text_message: newMessage.value.trim(),
       sender_id: sender.id,
       recipient_id: recipient.id,
    }
 
    try {
       const docRef = await addNewMessage(messageDoc);
-      textMsg.value = "";
+      newMessage.value = "";
 
       // added the user to the userContacted list, if not present
       if (!usersContacted.value.find(user => user.id === recipient.id)) {
          usersContacted.value.push(recipient);
-        await addUserToUsersContacted(sender.id, {
-          id: recipient.id,
-          email: recipient.email,
-        });
+         await addUserToUsersContacted(sender.id, {
+            id: recipient.id,
+            email: recipient.email,
+         });
       }
 
       console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
@@ -124,56 +132,50 @@ onBeforeMount(async () => {
 
 
 <template>
-<div>
-   <div>
-      <h1>Home</h1>
-   </div>
-
-   <div>
-      <button @click="signOutOfAccount">Sign Out</button>
-   </div>
-
-   <br><br>
-
-   <div>
-      Message to: <input type="email" v-model="searchEmail" @keydown.enter="searchUser(searchEmail)">
-      <button @click="searchUser(searchEmail)">Search</button>
-      <br><label>{{ userFound }}</label>
-   </div>
-
-   <br><br>
-
-   <div>
-      <span>Recently contacted</span>
-      <div>
-            <ul>
-               <li v-for="user in usersContacted">
-                  <button @click="loadAllMessages(user.email)">{{ user.email }}</button>
-               </li>
-            </ul>
-      </div>
-   </div>
-
-   <br><br>
-
-   <div id="chat_feed" style="width: 500px; height: 400px; max-height: 400px; overflow: scroll; border: 1px solid black">
-      <div style="border: 1px solid gray; margin: 1px"
-         v-for="message in messages"
-      >
-         <p>
-            {{ message.text_message }}
-         </p>
-      </div>
-   </div>
-
-   <br><br>
-
-   <div>
-      <label for="">Your message</label><br>
-      <textarea v-model="textMsg"></textarea>
-      <button @click="sendMessage">Send</button>
-   </div>
-</div>
+   <v-app>
+      <v-main>
+         <v-container fluid>
+            <v-row>
+               <v-col cols="3">
+                  <v-card class="mx-auto pa-2">
+                     <v-list>
+                        <v-list-item v-for="user in usersContacted" 
+                        :key="user.id"
+                        :value="user"
+                        color="primary"
+                        @click="selectedUser = user; loadAllMessages(user.email)"
+                        :active="user.email === selectedUser?.email"
+                        rounded="xl"
+                        >
+                           <v-list-item-title v-text="user.email"></v-list-item-title>
+                        </v-list-item>
+                     </v-list>
+                  </v-card>
+               </v-col>
+               <v-col cols="9">
+                  <v-card>
+                     <v-card-text>
+                        <v-list lines="two">
+                           <v-list-item v-for="message in messages" :key="message.id">
+                              <v-list-item-title>{{ message.text_message }}</v-list-item-title>
+                              <v-list-item-subtitle>
+                                 <strong>{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}</strong>
+                                 @ {{ message.sent_on }}
+                              </v-list-item-subtitle>
+                           </v-list-item>
+                        </v-list>
+                     </v-card-text>
+                     
+                     <v-card-actions>
+                        <v-text-field label="New message..." v-model="newMessage" @keyup.enter="sendMessage"></v-text-field>
+                        <v-btn color="primary" @click="sendMessage">Send</v-btn>
+                     </v-card-actions>
+                  </v-card>
+               </v-col>
+            </v-row>
+         </v-container>
+      </v-main>
+   </v-app>
 </template>
 
 

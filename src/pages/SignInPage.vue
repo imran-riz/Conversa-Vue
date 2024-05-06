@@ -74,7 +74,7 @@ const signInToAccount = async () => {
                            @click="signInToAccount"
                            style="margin: 40px 0 0 0"
                         >
-                        Sign In
+                           Sign In
                         </v-btn>
                      </v-form>
                   </div>
@@ -92,7 +92,7 @@ const signInToAccount = async () => {
                style="margin: auto"
             >
                <v-card-text style="text-align: center">
-                  Don't have an account? Sign up!
+                  Don't have an account? <a href="/signup">Sign up!</a>
                </v-card-text>
             </v-card>
          </v-col>
