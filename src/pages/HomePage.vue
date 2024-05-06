@@ -9,13 +9,9 @@ import { addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, regist
 const router = useRouter();
 
 let currentUserAuth = null;
-let sender = null;
-let recipient = {
-   id: null,
-   email: null
-};
-let selectedUser = ref(null);
 
+const sender = ref({ id: null, email: null });
+const recipient = ref({ id: null, email: null });
 const searchEmail = ref("");
 const userFound = ref("");
 const newMessage = ref("");
@@ -71,14 +67,14 @@ const searchUser = async (targetEmail) => {
  */
 const loadAllMessages = async (recipientEmail = null) => {
    if (recipientEmail) {
-      if (recipientEmail === recipient.email) return;
+      if (recipientEmail === recipient.value.email) return;
 
-      recipient = await getUserDetailsWithEmail(recipientEmail);
+      recipient.value = await getUserDetailsWithEmail(recipientEmail);
    }
    
 
    messages.value = [];
-   registerMessageListener(sender.id, recipient.id);
+   registerMessageListener(sender.value.id, recipient.value.id);
    
    console.log("Messages loaded:");
    console.log(messages.value);
@@ -96,8 +92,8 @@ const sendMessage = async () => {
    const messageDoc = {
       sent_on: new Date().toLocaleString(),
       text_message: newMessage.value.trim(),
-      sender_id: sender.id,
-      recipient_id: recipient.id,
+      sender_id: sender.value.id,
+      recipient_id: recipient.value.id,
    }
 
    try {
@@ -105,11 +101,11 @@ const sendMessage = async () => {
       newMessage.value = "";
 
       // added the user to the userContacted list, if not present
-      if (!usersContacted.value.find(user => user.id === recipient.id)) {
+      if (!usersContacted.value.find(user => user.id === recipient.value.id)) {
          usersContacted.value.push(recipient);
-         await addUserToUsersContacted(sender.id, {
-            id: recipient.id,
-            email: recipient.email,
+         await addUserToUsersContacted(sender.value.id, {
+            id: recipient.value.id,
+            email: recipient.value.email,
          });
       }
 
@@ -125,49 +121,61 @@ const sendMessage = async () => {
 
 onBeforeMount(async () => {
    currentUserAuth = await getCurrentUserAuth();
-   sender = await getUserDetailsWithEmail(currentUserAuth.email);
-   usersContacted.value = sender.users_contacted;
+   sender.value = await getUserDetailsWithEmail(currentUserAuth.email);
+   usersContacted.value = sender.value.users_contacted;
 });
 </script>
 
 
 <template>
    <v-app>
+      <v-navigation-drawer class="pa-2">
+         <v-list>
+            <v-list-item v-for="user in usersContacted" :key="user.id"
+               :value="user"
+               color="primary"
+               rounded="xl"
+               @click="loadAllMessages(user.email)"
+               :active="user.email === recipient.email"
+            >
+               <v-list-item-title v-text="user.email"></v-list-item-title>
+            </v-list-item>
+         </v-list>
+         <v-btn 
+            class="me-2 text-none" 
+            variant="outlined" block color="red"
+            prepend-icon="mdi-logout"
+            @click="signOutOfAccount"
+         >Sign out</v-btn>
+      </v-navigation-drawer>
+
+      <v-app-bar 
+         elevation="1"
+         :title="`${recipient.first_name} ${recipient.last_name}`"
+      ></v-app-bar>
+
       <v-main>
          <v-container fluid>
             <v-row>
-               <v-col cols="3">
-                  <v-card class="mx-auto pa-2">
-                     <v-list>
-                        <v-list-item v-for="user in usersContacted" 
-                        :key="user.id"
-                        :value="user"
-                        color="primary"
-                        @click="selectedUser = user; loadAllMessages(user.email)"
-                        :active="user.email === selectedUser?.email"
-                        rounded="xl"
-                        >
-                           <v-list-item-title v-text="user.email"></v-list-item-title>
-                        </v-list-item>
-                     </v-list>
-                  </v-card>
-               </v-col>
-               <v-col cols="9">
+               <v-col cols="12">
                   <v-card>
                      <v-card-text>
                         <v-list lines="two">
                            <v-list-item v-for="message in messages" :key="message.id">
                               <v-list-item-title>{{ message.text_message }}</v-list-item-title>
                               <v-list-item-subtitle>
-                                 <strong>{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}</strong>
-                                 @ {{ message.sent_on }}
+                                 <strong>{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}</strong> | {{ message.sent_on }}
                               </v-list-item-subtitle>
                            </v-list-item>
                         </v-list>
                      </v-card-text>
                      
                      <v-card-actions>
-                        <v-text-field label="New message..." v-model="newMessage" @keyup.enter="sendMessage"></v-text-field>
+                        <v-text-field 
+                           label="New message..." 
+                           v-model="newMessage" 
+                           @keyup.enter="sendMessage"
+                        ></v-text-field>
                         <v-btn color="primary" @click="sendMessage">Send</v-btn>
                      </v-card-actions>
                   </v-card>
