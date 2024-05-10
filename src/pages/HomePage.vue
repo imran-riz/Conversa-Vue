@@ -1,5 +1,5 @@
 <script setup>
-import { onBeforeMount, ref } from "vue";
+import { nextTick, onBeforeMount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
 import { addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages } from "../services/firebase_firestore.js";
@@ -10,8 +10,8 @@ const router = useRouter();
 
 let currentUserAuth = null;
 
-const sender = ref({ id: null, email: null });
-const recipient = ref({ id: null, email: null });
+const sender = ref({ id: null, email: null, first_name: "", last_name: ""});
+const recipient = ref({ id: null, email: null, first_name: "", last_name: ""});
 const searchEmail = ref("");
 const userFound = ref("");
 const newMessage = ref("");
@@ -76,22 +76,31 @@ const loadAllMessages = async (recipientEmail = null) => {
    messages.value = [];
    registerMessageListener(sender.value.id, recipient.value.id);
    
-   console.log("Messages loaded:");
-   console.log(messages.value);
+   // console.log("Messages loaded: ");
+   // console.log(messages.value);
+   
+   watch(messages, () => {
+      nextTick(() => {
+         scrollToBottomOfMessageList();
+      });
+   }, { immediate: true, deep: true });
+   
 }
 
 
 /**
  * Used to send a message to another user. If this user does not already exist in the users contacted list, they will be added.
  */
-const sendMessage = async () => {
-   if (!recipient) return;
+const sendMessage = async (keyEvent = null) => {
+   if (keyEvent?.shiftKey) return;
+
+   if (!recipient.value.id) return;
 
    console.log(`HomePage.sendMessage() -> attempting to send a message...`);
 
    const messageDoc = {
       sent_on: new Date().toLocaleString(),
-      text_message: newMessage.value.trim(),
+      text_message: newMessage.value,
       sender_id: sender.value.id,
       recipient_id: recipient.value.id,
    }
@@ -116,6 +125,14 @@ const sendMessage = async () => {
       console.error(`HomePage.sendMessage() -> failed to add message doc to db. Error code: ${error.code}`);
       console.error(error);
    }
+
+   scrollToBottomOfMessageList();
+}
+
+
+const scrollToBottomOfMessageList = () => {
+   const messageListContainer = document.querySelector(".message-list");
+   messageListContainer.scrollTop = messageListContainer.scrollHeight;
 }
 
 
@@ -128,7 +145,7 @@ onBeforeMount(async () => {
 
 
 <template>
-   <v-app>
+   <v-app class="app">
       <v-navigation-drawer class="pa-2">
          <v-list>
             <v-list-item v-for="user in usersContacted" :key="user.id"
@@ -160,7 +177,7 @@ onBeforeMount(async () => {
                <v-col cols="12">
                   <v-card>
                      <v-card-text>
-                        <v-list lines="two">
+                        <v-list class="message-list" lines="two">
                            <v-list-item v-for="message in messages" :key="message.id">
                               <v-list-item-title>{{ message.text_message }}</v-list-item-title>
                               <v-list-item-subtitle>
@@ -171,12 +188,16 @@ onBeforeMount(async () => {
                      </v-card-text>
                      
                      <v-card-actions>
-                        <v-text-field 
-                           label="New message..." 
+                        <v-textarea
+                           variant="outlined" 
+                           label="New message" 
                            v-model="newMessage" 
-                           @keyup.enter="sendMessage"
-                        ></v-text-field>
-                        <v-btn color="primary" @click="sendMessage">Send</v-btn>
+                           rows="1"
+                           autogrow
+                           style="white-space: pre-line;"
+                           @keydown.enter="sendMessage($event)"
+                        ></v-textarea>
+                        <v-btn color="primary" variant="outlined" @click="sendMessage()">Send</v-btn>
                      </v-card-actions>
                   </v-card>
                </v-col>
@@ -189,5 +210,15 @@ onBeforeMount(async () => {
 
 
 <style scoped>
+.app {
+  max-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
+}
 
+.message-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
 </style>
