@@ -5,8 +5,6 @@ import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
 import {
 	addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages, deleteAllMessages
 } from "../services/firebase_firestore.js";
-import sendMessageIcon from "/public/icons/send-message-black.svg";
-import { mdiAccount } from '@mdi';
 
 
 const router = useRouter();
@@ -19,8 +17,8 @@ const searchEmail = ref("");
 const userFound = ref("");
 const newMessage = ref("");
 const usersContacted = ref([]);
-const drawer = ref(true);
-const rail = ref(true);
+const drawer = ref(false);
+// const rail = ref(true);
 
 
 /**
@@ -160,20 +158,28 @@ onBeforeMount(async () => {
    <v-app class="app">
       <v-navigation-drawer
 			class="pa-2"
-			:rail="rail"
-			permanent
+			v-model="drawer"
+         app
+         color="#1E1F20"
 		>
-			<v-btn @click="rail = !rail">=</v-btn>
+			<!-- <v-btn @click="rail = !rail">=</v-btn> -->
 
 			<v-list-item>
-				<v-btn>New chat</v-btn>
+				<v-btn 
+               class="text-none"
+               variant="flat" 
+               color="#282A2C"
+               rounded="xl"
+               width="120px"
+            >New chat</v-btn>
 			</v-list-item>
 
-         <v-list :hidden="rail">
+         <v-list>
             <v-list-item v-for="user in usersContacted" :key="user.id"
+               :class="{'selected-contacted-user-item': user.email === recipient.email}"
                :value="user"
-               color="primary"
                rounded="xl"
+               prepend-icon="mdi-account-circle"
                @click="loadAllMessages(user.email)"
                :active="user.email === recipient.email"
             >
@@ -191,19 +197,24 @@ onBeforeMount(async () => {
          </v-list>
       </v-navigation-drawer>
 
-<!--      <v-app-bar-->
-<!--         elevation="1"-->
-<!--         :title="`${recipient.first_name} ${recipient.last_name}`"-->
-<!--      ></v-app-bar>-->
+      <v-app-bar flat color="#131314">
+         <v-app-bar-nav-icon color="smoke" @click="drawer = !drawer"></v-app-bar-nav-icon>
+         <v-toolbar-title>{{ `${recipient.first_name} ${recipient.last_name}` }}</v-toolbar-title>
+      </v-app-bar>
 
       <v-main>
-         <v-container fluid>
-            <v-row>
+         <v-container fluid fill-height>
+            <v-row align="center" justify="center" color="#131314">
                <v-col cols="12">
-                  <v-card>
+                  <v-card 
+                     width="900px" color="#131314"
+                     style="margin: auto;"
+                  >
                      <v-card-text>
                         <v-list class="message-list" lines="two">
-                           <v-list-item v-for="message in messages" :key="message.id">
+                           <v-list-item v-for="message in messages" :key="message.id"
+                              class="message-bubble"
+                           >
                               <v-list-item-title>{{ message.text_message }}</v-list-item-title>
                               <v-list-item-subtitle>
                                  <strong>
@@ -216,7 +227,6 @@ onBeforeMount(async () => {
                      
                      <v-card-actions>
                         <v-textarea
-                           variant="outlined"
                            label="New message"
                            v-model="newMessage"
                            rows="1"
@@ -226,17 +236,14 @@ onBeforeMount(async () => {
                         >
 									<template #append>
 										<v-btn
+                                 density="compact"
+                                 color="white"
+                                 :disabled="newMessage.trim() === ''"
+                                 append-icon="mdi-send-outline"
 											@click="sendMessage()"
-											color="primary"
-											:disabled="newMessage.trim() === ''"
-										>
-											<v-icon :icon="mdiAccount"></v-icon>
-										</v-btn>
+										></v-btn>
 									</template>
 								</v-textarea>
-<!--                        <v-btn color="primary" variant="outlined" @click="sendMessage()">Send</v-btn>-->
-
-<!--								<v-btn color="red" variant="outlined" @click="clearAllMessages()">Clear all messages</v-btn>-->
                      </v-card-actions>
                   </v-card>
                </v-col>
@@ -253,11 +260,22 @@ onBeforeMount(async () => {
   max-height: 100vh;
   max-width: 100vw;
   overflow: hidden;
+  background-color: #131314;
+}
+
+.selected-contacted-user-item {
+   background-color: #004A77;
 }
 
 .message-list {
   max-height: 60vh;
   overflow-y: auto;
   scroll-behavior: smooth;
+  background-color: #131314;
+}
+
+.message-bubble {
+   background-color: #004A77;
+   margin-bottom: 5px;
 }
 </style>

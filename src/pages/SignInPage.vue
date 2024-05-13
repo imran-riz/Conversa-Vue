@@ -25,14 +25,26 @@ const signInToAccount = async () => {
       await router.push("/home");
    }
    catch (error) {
-      if (error.code === "auth/user-disabled") {
-         errorMsg.value = "Account disabled. Contact admin.";
-      }
-      else if (error.code === "auth/invalid-email" || error.code === "auth/user-not-found" || error.code === "auth/invalid-login-credentials" || error.code === "auth/wrong-password") {
-         errorMsg.value = "Incorrect email or password.";
-      }
-      else {
-         errorMsg.value = "Oops! Something went wrong.";
+      // console.log(`SignInPage.signIn() -> Error occurred: ${error.code}`);
+      
+      switch (error.code) {
+         case "auth/user-disabled":
+            errorMsg.value = "Account disabled. Contact admin.";
+            break;
+         case "auth/invalid-email":
+            errorMsg.value = "Invalid email address";
+            break;
+         case "auth/user-not-found":
+            errorMsg.value = "There's no account with that email address.";
+            break;
+         case "auth/invalid-credential":
+         case "auth/invalid-login-credentials":
+         case "auth/wrong-password":
+            errorMsg.value = "Incorrect email or password.";
+            break;
+         default:
+            errorMsg.value = "Oops! Something went wrong.";
+            break;
       }
    }
 }

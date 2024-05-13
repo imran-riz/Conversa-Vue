@@ -46,6 +46,7 @@ router.beforeEach(async (to, from, next) => {
       }
    }
    else {
+      console.log("router/index.js -> Auth not requitred. Going to page.");
       next();
    }
 });
