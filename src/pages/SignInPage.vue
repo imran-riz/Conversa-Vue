@@ -3,9 +3,9 @@ import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { signIn } from "../services/firebase_auth.js";
 
+
 const router = useRouter();
 
-// refs used
 const email = ref("");
 const password = ref("");
 const validForm = computed(() => email.value.trim() && password.value);
@@ -16,7 +16,7 @@ const signInToAccount = async () => {
    console.log(`SignInPage.signIn() -> User attempts to sign in...`);
 
    try {
-      const userCredentials = await signIn(email.value, password.value);
+		await signIn(email.value, password.value);
 
       console.log(`SignInPage.signIn() -> User successfully signed in to account. Directing to HomePage.`);
       errorMsg.value = "";
@@ -59,8 +59,8 @@ const signInToAccount = async () => {
                style="min-height: 440px; margin: auto"
             >
                <v-card-title>
-                  <div style="margin: 40px 0 60px 0; text-align: center">
-							<h1 class="text-h4">
+						<div class="my-10">
+							<h1 class="text-h4 text-center">
 								Welcome
 							</h1>
 						</div>
@@ -69,26 +69,29 @@ const signInToAccount = async () => {
                   <div style="text-align: center">
                      <v-form @keydown.enter="signInToAccount">
                         <v-text-field
+									class="mx-7 mb-2"
                            label="Email address"
                            v-model="email"
                            required
-									color="primary"
-                           style="margin: 0 20px 0 20px"
+									bg-color="surface-container-highest"
+									rounded="l"
                         ></v-text-field>
                         <v-text-field
+									class="mx-7 mb-2"
                            label="Password"
                            v-model="password"
                            type="password"
                            required
-									color="primary"
-                           style="margin: 0 20px 0 20px"
+									bg-color="surface-container-highest"
+									rounded="l"
                         ></v-text-field>
                         <v-btn
+									class="mt-14"
                            width="320px"
+									color="primary"
+									rounded="xl"
                            :disabled="!validForm"
                            @click="signInToAccount"
-                           style="margin: 40px 0 0 0"
-									color="primary"
                         >
                            Sign In
                         </v-btn>
