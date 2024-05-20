@@ -5,6 +5,8 @@ import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
 import {
 	addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages, deleteAllMessages
 } from "../services/firebase_firestore.js";
+import MessageBubble	 from "../components/MessageBubble.vue";
+import TheNavList from "../components/TheNavList.vue";
 
 
 const router = useRouter();
@@ -18,12 +20,8 @@ const userFound = ref("");
 const newMessage = ref("");
 const usersContacted = ref([]);
 const drawer = ref(false);
-// const rail = ref(true);
 
 
-/**
- * Used to sign out the current user account from the Firebase account
- */
 const signOutOfAccount = () => {
    console.log("HomePage.signOutOfAccount -> signing out...");
 
@@ -38,10 +36,6 @@ const signOutOfAccount = () => {
 }
 
 
-/**
- * Used to search for a user
- * @param targetEmail Email of the user to search for
- */
 const searchUser = async (targetEmail) => {
    if (targetEmail.trim() === "") return;
 
@@ -64,11 +58,7 @@ const searchUser = async (targetEmail) => {
    }
 }
 
-/**
- * Ideally is called only once when a different recipient is selected or found via search.
- * 
- * @param recipientEmail - Optional. The email of the recipient. Should be provided only when a search is found.
- */
+
 const loadAllMessages = async (recipientEmail = null) => {
    if (recipientEmail) {
       if (recipientEmail === recipient.value.email) return;
@@ -92,10 +82,6 @@ const loadAllMessages = async (recipientEmail = null) => {
 }
 
 
-/**
- * Used to send a message to another user.
- * If this user does not already exist in the users contacted list, they will be added.
- */
 const sendMessage = async (keyEvent = null) => {
    if (keyEvent?.shiftKey) return;
 
@@ -140,6 +126,7 @@ const scrollToBottomOfMessageList = () => {
    messageListContainer.scrollTop = messageListContainer.scrollHeight;
 }
 
+
 const clearAllMessages = async () => {
 	// await deleteAllMessages();
 	// messages.value = [];
@@ -155,127 +142,135 @@ onBeforeMount(async () => {
 
 
 <template>
-   <v-app class="app">
-      <v-navigation-drawer
-			class="pa-2"
-			v-model="drawer"
-         app
-         color="#1E1F20"
+<v-app class="app">
+	<v-navigation-drawer
+		class="pa-2 bg-surface-container-high"
+		v-model="drawer"
+		app
+	>
+		<TheNavList
+			:users-contacted="usersContacted"
+			:recipient="recipient"
+			:load-all-messages="loadAllMessages"
+			:sign-out-of-account="signOutOfAccount"
+		></TheNavList>
+	</v-navigation-drawer>
+	<v-app-bar flat>
+		<v-app-bar-nav-icon
+			color="smoke"
+			@click="drawer = !drawer"
+		></v-app-bar-nav-icon>
+		<v-toolbar-title>
+			{{ `${recipient.first_name} ${recipient.last_name}` }}
+		</v-toolbar-title>
+	</v-app-bar>
+	<v-main>
+		<v-container
+			fluid
+			fill-height
 		>
-			<!-- <v-btn @click="rail = !rail">=</v-btn> -->
+			<v-row
+				align="center"
+				justify="center"
+			>
+				<v-col cols="12">
+					<v-card
+						v-if="!recipient.id"
+						width="900px"
+						color="surface"
+						style="margin: auto; height: 200px"
+					>
+						<v-card-title>
+							<h1 class="text-h2 text-center">
+								Hey {{ sender.first_name }} 👋
+							</h1>
+						</v-card-title>
+						<v-card-text
+							style="text-align: center; min-height: 762px;"
+						>
+							<v-btn
+								class="text-none"
+								variant="flat"
+								color="primary"
+								prepend-icon="mdi-chat-plus"
+								rounded="xl"
+								width="120px"
+							>New chat</v-btn>
+						</v-card-text>
+					</v-card>
+					<v-card
+						flat
+						width="900px"
+						style="margin: auto;"
+					>
+						<v-card-text>
+							<v-list
+								class="message-list"
+								lines="two"
+							>
+								<v-list-item v-for="message in messages" :key="message.id">
+									<MessageBubble
+										:text-message="message.text_message"
+										:user-name="message.sender_id === sender.id ? 'You' : recipient.first_name"
+										:sent-on="message.sent_on"
+									></MessageBubble>
+								</v-list-item>
+							</v-list>
+						</v-card-text>
 
-			<v-list-item>
-				<v-btn 
-               class="text-none"
-               variant="flat" 
-               color="#282A2C"
-               rounded="xl"
-               width="120px"
-            >New chat</v-btn>
-			</v-list-item>
-
-         <v-list>
-            <v-list-item v-for="user in usersContacted" :key="user.id"
-               :class="{'selected-contacted-user-item': user.email === recipient.email}"
-               :value="user"
-               rounded="xl"
-               prepend-icon="mdi-account-circle"
-               @click="loadAllMessages(user.email)"
-               :active="user.email === recipient.email"
-            >
-               <v-list-item-title
-						v-text="user.email"
-					></v-list-item-title>
-            </v-list-item>
-				<br>
-				<v-btn
-					class="me-2 text-none"
-					variant="outlined" block color="red"
-					prepend-icon="mdi-logout"
-					@click="signOutOfAccount"
-				>Sign out</v-btn>
-         </v-list>
-      </v-navigation-drawer>
-
-      <v-app-bar flat color="#131314">
-         <v-app-bar-nav-icon color="smoke" @click="drawer = !drawer"></v-app-bar-nav-icon>
-         <v-toolbar-title>{{ `${recipient.first_name} ${recipient.last_name}` }}</v-toolbar-title>
-      </v-app-bar>
-
-      <v-main>
-         <v-container fluid fill-height>
-            <v-row align="center" justify="center" color="#131314">
-               <v-col cols="12">
-                  <v-card 
-                     width="900px" color="#131314"
-                     style="margin: auto;"
-                  >
-                     <v-card-text>
-                        <v-list class="message-list" lines="two">
-                           <v-list-item v-for="message in messages" :key="message.id"
-                              class="message-bubble"
-                           >
-                              <v-list-item-title>{{ message.text_message }}</v-list-item-title>
-                              <v-list-item-subtitle>
-                                 <strong>
-												{{ message.sender_id === sender.id ? `You` : `${recipient.first_name}` }}
-											</strong> | {{ message.sent_on }}
-                              </v-list-item-subtitle>
-                           </v-list-item>
-                        </v-list>
-                     </v-card-text>
-                     
-                     <v-card-actions>
-                        <v-textarea
-                           label="New message"
-                           v-model="newMessage"
-                           rows="1"
-                           autogrow
-                           style="white-space: pre-line;"
-                           @keydown.enter="sendMessage($event)"
-                        >
-									<template #append>
-										<v-btn
-                                 density="compact"
-                                 color="white"
-                                 :disabled="newMessage.trim() === ''"
-                                 append-icon="mdi-send-outline"
-											@click="sendMessage()"
-										></v-btn>
-									</template>
-								</v-textarea>
-                     </v-card-actions>
-                  </v-card>
-               </v-col>
-            </v-row>
-         </v-container>
-      </v-main>
-   </v-app>
+						<v-card-actions v-if="recipient.id"
+							position="fixed"
+							style="width: inherit"
+						>
+							<v-textarea
+								class="new-message-textarea"
+								label="New message"
+								v-model="newMessage"
+								variant="solo-filled"
+								rows="1"
+								max-rows="5"
+								auto-grow
+								rounded="xl"
+								bg-color="surface-container-high"
+								style="white-space: pre-line;"
+								@keydown.enter="sendMessage($event)"
+							>
+								<template #append-inner>
+									<v-btn
+										rounded="xl"
+										color="white"
+										:disabled="newMessage.trim() === ''"
+										append-icon="mdi-send-outline"
+										@click="sendMessage()"
+									></v-btn>
+								</template>
+							</v-textarea>
+						</v-card-actions>
+					</v-card>
+				</v-col>
+			</v-row>
+		</v-container>
+	</v-main>
+</v-app>
 </template>
 
 
 
 <style scoped>
 .app {
-  max-height: 100vh;
-  max-width: 100vw;
-  overflow: hidden;
-  background-color: #131314;
-}
-
-.selected-contacted-user-item {
-   background-color: #004A77;
+	max-width: 100vw;
+	max-height: 100vh;
+	overflow-y: auto;
 }
 
 .message-list {
-  max-height: 60vh;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  background-color: #131314;
+	scroll-behavior: smooth;
 }
 
-.message-bubble {
-   background-color: #004A77;
-   margin-bottom: 5px;
+.new-message-textarea {
+	position: fixed;
+	bottom: 0;
+	width: inherit;
+	z-index: 1000;
 }
 </style>
