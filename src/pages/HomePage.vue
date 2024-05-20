@@ -75,7 +75,7 @@ const loadAllMessages = async (recipientEmail = null) => {
    
    watch(messages, () => {
       nextTick(() => {
-         scrollToBottomOfMessageList();
+         scrollToBottomOfMessages();
       });
    }, { immediate: true, deep: true });
    
@@ -89,8 +89,12 @@ const sendMessage = async (keyEvent = null) => {
 
    console.log(`HomePage.sendMessage() -> attempting to send a message...`);
 
+	const currentDateAndTime = new Date().toISOString();
+	const currentDateTime = new Date().toLocaleString();
+	console.log(`HomePage.sendMessage() -> current date and time: ${currentDateAndTime} | ${currentDateTime}`);
+
    try {
-      const docRef = await addNewMessage(sender.value.id, recipient.value.id, newMessage.value, new Date().toDateString());
+      const docRef = await addNewMessage(sender.value.id, recipient.value.id, newMessage.value, currentDateTime);
       newMessage.value = "";
 
       // added the user to the userContacted list, if not present. This is done for both the sender and recipient accounts.
@@ -108,13 +112,13 @@ const sendMessage = async (keyEvent = null) => {
       console.error(error);
    }
 
-   scrollToBottomOfMessageList();
+   scrollToBottomOfMessages();
 }
 
 
-const scrollToBottomOfMessageList = () => {
-   const messageListContainer = document.querySelector(".message-list");
-   messageListContainer.scrollTop = messageListContainer.scrollHeight;
+const scrollToBottomOfMessages = () => {
+   const appContainer = document.querySelector(".app");
+   appContainer.scrollTop = appContainer.scrollHeight;
 }
 
 
@@ -250,11 +254,7 @@ onBeforeMount(async () => {
 <style scoped>
 .app {
 	max-width: 100vw;
-	max-height: 100vh;
 	overflow-y: auto;
-}
-
-.message-list {
 	scroll-behavior: smooth;
 }
 

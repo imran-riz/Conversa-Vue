@@ -9,8 +9,7 @@ defineProps([
 
 <template>
 	<v-card
-		class="message-bubble"
-		:class="'message-bubble ' + (userName === 'You' ? 'message-bubble-sender bg-surface-container-low' : 'message-bubble-recipient bg-secondary-container')"
+		:class="'message-bubble mb-0 ' + (userName === 'You' ? 'message-bubble-sender bg-surface-container-low' : 'message-bubble-recipient bg-secondary-container')"
 		rounded="xl"
 	>
 		<v-card-text>
@@ -27,7 +26,6 @@ defineProps([
 
 <style scoped>
 .message-bubble {
-	display: block;
 	max-width: 592px;
 }
 

@@ -22,13 +22,12 @@ defineProps([
 
 	<v-list>
 		<v-list-item v-for="user in usersContacted" :key="user.id"
-			:class="{'selected-contacted-user-item': user.email === recipient.email}"
+			class="mb-1"
 			:value="user"
 			rounded="xl"
 			prepend-icon="mdi-account"
 			@click="loadAllMessages(user.email)"
 			:active="user.email === recipient.email"
-			style="margin-bottom: 5px;"
 		>
 			<v-list-item-title
 				v-text="user.username"
