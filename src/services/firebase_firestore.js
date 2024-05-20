@@ -1,5 +1,5 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot, deleteDoc } from "firebase/firestore";
 import { ref } from "vue";
 
 
@@ -160,6 +160,17 @@ const registerMessageListener = (senderId, recipientId) => {
    });
 }
 
+// function to delete all documents in the collection "messages"
+const deleteAllMessages = async () => {
+   const messagesCollection = collection(db, "messages");
+   const querySnap = await getDocs(messagesCollection);
+
+   querySnap.forEach(async (doc) => {
+      await deleteDoc(doc.ref);
+   });
+
+}
+
 
 export {
    addNewUser,
@@ -167,5 +178,6 @@ export {
    addNewMessage,
    addUserToUsersContacted,
    registerMessageListener,
+   deleteAllMessages,
    messages,
 };

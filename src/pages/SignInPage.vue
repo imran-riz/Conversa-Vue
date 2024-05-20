@@ -20,19 +20,27 @@ const signInToAccount = async () => {
 
       console.log(`SignInPage.signIn() -> User successfully signed in to account. Directing to HomePage.`);
       errorMsg.value = "";
-
-      // direct user to HomePage
       await router.push("/home");
    }
    catch (error) {
-      if (error.code === "auth/user-disabled") {
-         errorMsg.value = "Account disabled. Contact admin.";
-      }
-      else if (error.code === "auth/invalid-email" || error.code === "auth/user-not-found" || error.code === "auth/invalid-login-credentials" || error.code === "auth/wrong-password") {
-         errorMsg.value = "Incorrect email or password.";
-      }
-      else {
-         errorMsg.value = "Oops! Something went wrong.";
+      switch (error.code) {
+         case "auth/user-disabled":
+            errorMsg.value = "Account disabled. Contact admin.";
+            break;
+         case "auth/invalid-email":
+            errorMsg.value = "Invalid email address.";
+            break;
+         case "auth/user-not-found":
+            errorMsg.value = "There's no account with that email address.";
+            break;
+         case "auth/invalid-credential":
+         case "auth/invalid-login-credentials":
+         case "auth/wrong-password":
+            errorMsg.value = "Incorrect email or password.";
+            break;
+         default:
+            errorMsg.value = "Oops! Something went wrong.";
+            break;
       }
    }
 }
@@ -45,12 +53,17 @@ const signInToAccount = async () => {
       <v-row align="center" justify="center">
          <v-col cols="12">
             <v-card
-               width="400px"
-               variant="outlined"
-               style="min-height: 500px; margin: auto"
+					class="bg-surface-container-high"
+               width="460px"
+					rounded="xl"
+               style="min-height: 440px; margin: auto"
             >
                <v-card-title>
-                  <div style="margin: 40px 0 60px 0; text-align: center">Welcome</div>
+                  <div style="margin: 40px 0 60px 0; text-align: center">
+							<h1 class="text-h4">
+								Welcome
+							</h1>
+						</div>
                </v-card-title>
                <v-card-text>
                   <div style="text-align: center">
@@ -59,6 +72,7 @@ const signInToAccount = async () => {
                            label="Email address"
                            v-model="email"
                            required
+									color="primary"
                            style="margin: 0 20px 0 20px"
                         ></v-text-field>
                         <v-text-field
@@ -66,6 +80,7 @@ const signInToAccount = async () => {
                            v-model="password"
                            type="password"
                            required
+									color="primary"
                            style="margin: 0 20px 0 20px"
                         ></v-text-field>
                         <v-btn
@@ -73,13 +88,16 @@ const signInToAccount = async () => {
                            :disabled="!validForm"
                            @click="signInToAccount"
                            style="margin: 40px 0 0 0"
+									color="primary"
                         >
-                        Sign In
+                           Sign In
                         </v-btn>
                      </v-form>
                   </div>
                   <div style="text-align: center; margin: 50px 0 0 0">
-                     <p>{{ errorMsg }}</p>
+                     <p class="text-error font-weight-medium">
+								{{ errorMsg }}
+							</p>
                   </div>
                </v-card-text>
             </v-card>
@@ -87,12 +105,13 @@ const signInToAccount = async () => {
             <br><br>
 
             <v-card
-               width="400px"
-               variant="outlined"
+					class="bg-surface-container-high"
+               width="460px"
+					rounded="xl"
                style="margin: auto"
             >
                <v-card-text style="text-align: center">
-                  Don't have an account? Sign up!
+                  Don't have an account? <a href="/signup">Sign up!</a>
                </v-card-text>
             </v-card>
          </v-col>
@@ -103,5 +122,4 @@ const signInToAccount = async () => {
 
 
 <style scoped>
-
 </style>
