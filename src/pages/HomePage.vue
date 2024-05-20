@@ -13,9 +13,9 @@ const router = useRouter();
 
 let currentUserAuth = null;
 
-const sender = ref({ id: null, email: null, first_name: "", last_name: "", users_contacted: []});
-const recipient = ref({ id: null, email: null, first_name: "", last_name: "", users_contacted: []});
-const searchEmail = ref("");
+const sender = ref({ id: null, username: null, email: null, first_name: "", last_name: "", users_contacted: []});
+const recipient = ref({ id: null, username: null, email: null, first_name: "", last_name: "", users_contacted: []});
+const searchUsername = ref("");
 const userFound = ref("");
 const newMessage = ref("");
 const usersContacted = ref([]);
@@ -89,24 +89,15 @@ const sendMessage = async (keyEvent = null) => {
 
    console.log(`HomePage.sendMessage() -> attempting to send a message...`);
 
-   const messageDoc = {
-      sent_on: new Date().toLocaleString(),
-      text_message: newMessage.value,
-      sender_id: sender.value.id,
-      recipient_id: recipient.value.id,
-   }
-
    try {
-      const docRef = await addNewMessage(messageDoc);
+      const docRef = await addNewMessage(sender.value.id, recipient.value.id, newMessage.value, new Date().toDateString());
       newMessage.value = "";
 
-      // added the user to the userContacted list, if not present
+      // added the user to the userContacted list, if not present. This is done for both the sender and recipient accounts.
       if (!usersContacted.value.find(user => user.id === recipient.value.id)) {
          usersContacted.value.push(recipient);
-         await addUserToUsersContacted(sender.value.id, {
-            id: recipient.value.id,
-            email: recipient.value.email,
-         });
+         await addUserToUsersContacted(sender.value.id, recipient.value.id, recipient.value.username, recipient.value.email);
+			await addUserToUsersContacted(recipient.value.id, sender.value.id, sender.value.username, sender.value.email);
       }
 
       console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
@@ -144,7 +135,7 @@ onBeforeMount(async () => {
 <template>
 <v-app class="app">
 	<v-navigation-drawer
-		class="pa-2 bg-surface-container-high"
+		class="pa-2 bg-surface-container-low"
 		v-model="drawer"
 		app
 	>

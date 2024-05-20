@@ -4,8 +4,11 @@ import { addNewUserAuth } from "../services/firebase_auth.js";
 import { addNewUser} from "../services/firebase_firestore.js";
 
 
+const usernameHint = "Should contain only alphanumeric characters and underscores.";
+
 const firstName = ref("");
 const lastName = ref("");
+const username = ref("");
 const birthdate = ref(null);
 const email = ref("");
 const password = ref("");
@@ -21,7 +24,7 @@ const signUp = async () => {
    if (!validForm.value) return;
 
    console.log(`SignUpPage.signUp() -> creating a new account...`);
-   console.log(`Values: ${email.value} | ${firstName.value} | ${lastName.value} | ${birthdate.value}`);
+   console.log(`Values: ${email.value} | ${firstName.value} | ${lastName.value} | ${username.value} | ${birthdate.value}`);
 
    try {
       // first add a new auth
@@ -29,7 +32,7 @@ const signUp = async () => {
       console.log("SignUpPage.signUp() -> Auth added successfully.  Creating a user doc on Firestore...");
 
       // then, add a new document to the user collection
-      await addNewUser(email.value, firstName.value, lastName.value, birthdate.value);
+      await addNewUser(email.value, firstName.value, lastName.value, username.value, birthdate.value);
       errorMsg.value = "";
       console.log("SignUpPage.signUp() -> Document for new user created. Account creation successful!");
 
@@ -55,64 +58,81 @@ const signUp = async () => {
       <v-row align="center" justify="center">
          <v-col cols="12">
             <v-card
-               width="400px"
-               variant="outlined"
+					class="bg-surface-container-high"
+               width="460px"
+					rounded="xl"
                style="min-height: 500px; margin: auto"
             >
                <v-card-title>
-                  <div style="margin: 40px 0 60px 0; text-align: center">
-                     Sign Up
-                  </div>
+						<div class="my-10">
+							<h1 class="text-h4 text-center">
+								Sign up
+							</h1>
+						</div>
                </v-card-title>
                <v-card-text>
-                  <v-form @keydown.enter="signUp" style="text-align: center">
+                  <v-form @keydown.enter="signUp">
                      <v-text-field
-                        class="form-field-container"
+                        class="mx-7 mb-2"
                         label="First name"
                         v-model="firstName"
                         required
+								bg-color="surface-container-highest"
                      ></v-text-field>
                      <v-text-field
-                        class="form-field-container"
+                        class="mx-7 mb-2"
                         label="Last name"
                         v-model="lastName"
                         required
+								bg-color="surface-container-highest"
                      ></v-text-field>
                      <v-text-field
+								class="mx-7 mb-2"
                         label="Date of birth"
                         v-model="birthdate"
                         type="date"
                         required
+								bg-color="surface-container-highest"
                         style="margin: 0 20px 0 20px;"
                      ></v-text-field>
                      <v-text-field
+								class="mx-7 mb-2"
                         label="Email address"
-                           class="form-field-container"
                         v-model="email"
                         type="email"
                         required
+								bg-color="surface-container-highest"
                      ></v-text-field>
+							<v-text-field
+								class="mx-7 mb-2"
+								label="Username"
+								v-model="username"
+								required
+								:hint="usernameHint"
+							></v-text-field>
                      <v-text-field
+								class="mx-7 mb-2"
                         label="Password"
-                           class="form-field-container"
                         v-model="password"
                         required
+								bg-color="surface-container-highest"
                         type="password"
                      ></v-text-field>
-
-                     <div class="error-container form-field-container" :hidden="!errorMsg">
-                        <p>{{ errorMsg }}</p>
+                     <div class="text-center">
+                        <p class="text-error font-weight-medium" :hidden="!errorMsg">
+									{{ errorMsg }}
+								</p>
+								<v-btn
+									class="my-12"
+									width="320px"
+									color="primary"
+									rounded="xl"
+									:disabled="!validForm"
+									@click="signUp"
+								>
+									Let's go!
+								</v-btn>
                      </div>
-                     
-                     
-                     <v-btn
-                        width="320px"
-                        :disabled="!validForm"
-                        @click="signUp"
-                        style="margin: 40px 0 50px 0"
-                     >
-                        Let's go!
-                     </v-btn>
                   </v-form>
                </v-card-text>
             </v-card>
@@ -124,7 +144,4 @@ const signUp = async () => {
 
 
 <style scoped>
-.form-field-container {
-   margin: 0 20px 0 20px;
-}
 </style>
