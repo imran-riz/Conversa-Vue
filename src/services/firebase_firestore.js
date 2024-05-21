@@ -1,5 +1,5 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot, deleteDoc } from "firebase/firestore";
+import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot, deleteDoc, limit } from "firebase/firestore";
 import { ref } from "vue";
 
 
@@ -86,7 +86,8 @@ const addNewMessage = async (senderId, recipientId, textMessage, sentOn) => {
    try {
       const refDoc = await addDoc(collection(db, "messages"), messageDoc);
       console.log(`firebase_firestore.hs addNewMessage() -> message doc added to db!`);
-      
+
+      return refDoc;
    } catch (error) {
       throw error;
    }
@@ -146,6 +147,70 @@ const registerMessageListener = (senderId, recipientId) => {
 }
 
 
+const searchForUsers = async (username) => {
+   console.log(`chatapp_firebase.js searchForUsers() -> searching for users with username: ${username}`);
+
+   const searchQuery = query(
+      collection(db, 'users'),
+      where('username', '>=', username),
+      where('username', '<=', username + '\uf8ff'),
+      orderBy('username'),
+      limit(5),
+   );
+   const querySnap = await getDocs(searchQuery);
+
+   if (querySnap.empty) {
+      console.log(`chatapp_firebase.js searchForUsers() -> no users found`);
+      return [];
+   }
+
+   const users = [];
+   querySnap.forEach((doc) => {
+      users.push(
+         {
+            id: doc.id,
+            ...doc.data()
+         }
+      );
+   });
+
+   console.log(`chatapp_firebase.js searchForUsers() -> users found:`);
+   console.log(users);
+
+   return users;
+}
+
+/*
+
+const searchUsers = async (username) => {
+   const query = query(
+      collection(db, 'users'),
+      where('username', '>=', username),
+      where('username', '<=', username + '\uf8ff'),
+      orderBy('username'),
+      limit(5)
+   );
+   const querySnap = await getDocs(query);
+
+   if (querySnap.empty) return [];
+
+   const users = [];
+   querySnap.forEach((doc) => {
+      users.push(
+         {
+            id: doc.id,
+            ...doc.data()
+         }
+      );
+   });
+
+   console.log("Users found:");
+   console.log(users);
+
+   return users;
+}
+*/
+
 const deleteAllMessages = async () => {
    const messagesCollection = collection(db, "messages");
    const querySnap = await getDocs(messagesCollection);
@@ -164,5 +229,6 @@ export {
    addUserToUsersContacted,
    registerMessageListener,
    deleteAllMessages,
+   searchForUsers,
    messages,
 };
