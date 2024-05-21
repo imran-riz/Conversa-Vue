@@ -7,6 +7,7 @@ import {
 } from "../services/firebase_firestore.js";
 import MessageBubble	 from "../components/MessageBubble.vue";
 import TheNavList from "../components/TheNavList.vue";
+import NewChatDialog from "../components/NewChatDialog.vue";
 
 
 const router = useRouter();
@@ -15,8 +16,6 @@ let currentUserAuth = null;
 
 const sender = ref({ id: null, username: null, email: null, first_name: "", last_name: "", users_contacted: []});
 const recipient = ref({ id: null, username: null, email: null, first_name: "", last_name: "", users_contacted: []});
-const searchUsername = ref("");
-const userFound = ref("");
 const newMessage = ref("");
 const usersContacted = ref([]);
 const drawer = ref(false);
@@ -32,29 +31,6 @@ const signOutOfAccount = () => {
    }
    else {
       console.error(`HomePage.signOutOfAccount -> Failed to sign out of account.`);
-   }
-}
-
-
-const searchUser = async (targetEmail) => {
-   if (targetEmail.trim() === "") return;
-
-   console.log(`HomePage.searchUser -> searching for user with email: ${targetEmail}`);
-
-   const userData = await getUserDetailsWithEmail(targetEmail);
-
-   if (!userData) {
-      console.log(`HomePage.searchUser -> user not found.`);
-      userFound.value = "There's nobody with that email address.";
-   }
-   else {
-      userFound.value = "Found";
-      recipient.value = userData;
-
-      console.log(`HomePage.searchUser -> new recipient:`);
-      console.log(recipient.value);
-
-      await loadAllMessages();
    }
 }
 
@@ -99,7 +75,7 @@ const sendMessage = async (keyEvent = null) => {
 
       // added the user to the userContacted list, if not present. This is done for both the sender and recipient accounts.
       if (!usersContacted.value.find(user => user.id === recipient.value.id)) {
-         usersContacted.value.push(recipient);
+         usersContacted.value.push(recipient.value);
          await addUserToUsersContacted(sender.value.id, recipient.value.id, recipient.value.username, recipient.value.email);
 			await addUserToUsersContacted(recipient.value.id, sender.value.id, sender.value.username, sender.value.email);
       }
@@ -113,6 +89,14 @@ const sendMessage = async (keyEvent = null) => {
    }
 
    scrollToBottomOfMessages();
+}
+
+
+const newChat = (newRecipient) => {
+	console.log(`HomePage.newChat() -> new chat with: ${newRecipient}`);
+
+	recipient.value = newRecipient;
+	loadAllMessages();
 }
 
 
@@ -138,17 +122,34 @@ onBeforeMount(async () => {
 <template>
 <v-app class="app">
 	<v-navigation-drawer
-		class="pa-2 bg-surface-container-low"
+		class="pa-2 bg-surface-container-low flex-nav-drawer"
 		v-model="drawer"
 		app
 	>
+		<template #prepend>
+			<div class="pt-10 pb-5">
+				<NewChatDialog
+					@new-chat-with="(newRecipient) => newChat(newRecipient)"
+				></NewChatDialog>
+			</div>
+		</template>
 		<TheNavList
 			:users-contacted="usersContacted"
 			:recipient="recipient"
 			:load-all-messages="loadAllMessages"
 			:sign-out-of-account="signOutOfAccount"
 		></TheNavList>
+		<template v-slot:append>
+			<v-btn
+				class="text-none bg-error-container px-2 mb-3"
+				block
+				rounded="xl"
+				prepend-icon="mdi-logout"
+				@click="signOutOfAccount"
+			>Sign out</v-btn>
+		</template>
 	</v-navigation-drawer>
+
 	<v-app-bar flat>
 		<v-app-bar-nav-icon
 			color="smoke"
@@ -158,6 +159,7 @@ onBeforeMount(async () => {
 			{{ `${recipient.first_name} ${recipient.last_name}` }}
 		</v-toolbar-title>
 	</v-app-bar>
+
 	<v-main>
 		<v-container
 			fluid
@@ -179,17 +181,10 @@ onBeforeMount(async () => {
 								Hey {{ sender.first_name }} 👋
 							</h1>
 						</v-card-title>
-						<v-card-text
-							style="text-align: center; min-height: 762px;"
-						>
-							<v-btn
-								class="text-none"
-								variant="flat"
-								color="primary"
-								prepend-icon="mdi-chat-plus"
-								rounded="xl"
-								width="120px"
-							>New chat</v-btn>
+						<v-card-text style="text-align: center; min-height: 762px;">
+							<NewChatDialog
+								@new-chat-with="(newRecipient) => newChat(newRecipient)"
+							></NewChatDialog>
 						</v-card-text>
 					</v-card>
 					<v-card
