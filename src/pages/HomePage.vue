@@ -117,14 +117,13 @@ const sendMessage = async (keyEvent = null) => {
 
 
 const scrollToBottomOfMessages = () => {
-   const appContainer = document.querySelector(".app");
-   appContainer.scrollTop = appContainer.scrollHeight;
+	window.scrollTo(0, document.body.scrollHeight);
 }
 
 
 const clearAllMessages = async () => {
-	// await deleteAllMessages();
-	// messages.value = [];
+	await deleteAllMessages();
+	messages.value = [];
 }
 
 
@@ -254,8 +253,7 @@ onBeforeMount(async () => {
 <style scoped>
 .app {
 	max-width: 100vw;
-	overflow-y: auto;
-	scroll-behavior: smooth;
+	max-height: 100%;
 }
 
 .new-message-textarea {
