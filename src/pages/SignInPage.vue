@@ -1,22 +1,37 @@
+<!--suppress JSUnresolvedReference -->
 <script setup>
-import { computed, ref } from "vue";
+import { reactive, ref} from "vue";
 import { useRouter } from "vue-router";
 import { signIn } from "../services/firebase_auth.js";
+import { useVuelidate } from "@vuelidate/core";
+import { required, email, helpers } from "@vuelidate/validators";
 
 
-const router = useRouter();
-
-const email = ref("");
-const password = ref("");
-const validForm = computed(() => email.value.trim() && password.value);
+const state = reactive({ emailAddress: "", password: "" });
 const errorMsg = ref("");
+
+const validationRules = {
+	emailAddress: {
+		required: helpers.withMessage("Email address is required.", required),
+		email: helpers.withMessage("Invalid email address.", email),
+	},
+	password: {
+		required: helpers.withMessage("Password is required.", required),
+	},
+};
+const v$ = useVuelidate(validationRules, state);
+const router = useRouter();
 
 
 const signInToAccount = async () => {
    console.log(`SignInPage.signIn() -> User attempts to sign in...`);
 
+	const result = await v$.value.$validate();
+
+	if (!result) return;
+
    try {
-		await signIn(email.value, password.value);
+		await signIn(state.emailAddress, state.password);
 
       console.log(`SignInPage.signIn() -> User successfully signed in to account. Directing to HomePage.`);
       errorMsg.value = "";
@@ -36,7 +51,7 @@ const signInToAccount = async () => {
          case "auth/invalid-credential":
          case "auth/invalid-login-credentials":
          case "auth/wrong-password":
-            errorMsg.value = "Incorrect email or password.";
+            errorMsg.value = "Sorry, either your email address or password is incorrect.";
             break;
          default:
             errorMsg.value = "Oops! Something went wrong.";
@@ -69,53 +84,55 @@ const signInToAccount = async () => {
                   <div style="text-align: center">
                      <v-form @keydown.enter="signInToAccount">
                         <v-text-field
-									class="mx-7 mb-2"
+									class="mx-7 mb-2 text-left"
+									v-model="state.emailAddress"
+									:error-messages="v$.emailAddress.$errors.map(e => e.$message)"
                            label="Email address"
-                           v-model="email"
                            required
 									bg-color="surface-container-highest"
 									rounded="l"
                         ></v-text-field>
                         <v-text-field
-									class="mx-7 mb-2"
+									class="mx-7 mb-2 text-left"
+									v-model="state.password"
+									:error-messages="v$.password.$errors.map(e => e.$message)"
                            label="Password"
-                           v-model="password"
                            type="password"
                            required
 									bg-color="surface-container-highest"
 									rounded="l"
                         ></v-text-field>
-                        <v-btn
-									class="mt-14"
-                           width="320px"
-									color="primary"
-									rounded="xl"
-                           :disabled="!validForm"
-                           @click="signInToAccount"
-                        >
-                           Sign In
-                        </v-btn>
+								<div class="mt-4 mb-8">
+									<p class="text-body-2 text-error font-weight-medium">
+										{{ errorMsg }}
+									</p>
+								</div>
                      </v-form>
                   </div>
-                  <div style="text-align: center; margin: 50px 0 0 0">
-                     <p class="text-error font-weight-medium">
-								{{ errorMsg }}
-							</p>
-                  </div>
                </v-card-text>
-            </v-card>
-
-            <br><br>
-
-            <v-card
-					class="bg-surface-container-high"
-               width="460px"
-					rounded="xl"
-               style="margin: auto"
-            >
-               <v-card-text style="text-align: center">
-                  Don't have an account? <a href="/signup">Sign up!</a>
-               </v-card-text>
+					<v-card-actions class="pb-10">
+						<v-btn
+							class="ml-9 text-none"
+							width="92px"
+							color="primary"
+							variant="outlined"
+							rounded="xl"
+							@click="() => router.push('/signup')"
+						>
+							Sign Up
+						</v-btn>
+						<v-divider color="transparent"></v-divider>
+						<v-btn
+							class="mr-9 text-none"
+							width="92px"
+							color="primary"
+							variant="flat"
+							rounded="xl"
+							@click="signInToAccount"
+						>
+							Sign In
+						</v-btn>
+					</v-card-actions>
             </v-card>
          </v-col>
       </v-row>
