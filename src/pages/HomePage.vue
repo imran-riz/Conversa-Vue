@@ -3,7 +3,12 @@ import { nextTick, onBeforeMount, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getCurrentUserAuth, signOutUser } from "../services/firebase_auth.js";
 import {
-	addNewMessage, addUserToUsersContacted, getUserDetailsWithEmail, registerMessageListener, messages, deleteAllMessages
+	messages,
+	addNewMessage,
+	addUserToUsersContacted,
+	getUserDetailsWithEmail,
+	registerMessageListener,
+	incrementUnreadCounterWithContactedUser
 } from "../services/firebase_firestore.js";
 import MessageBubble	 from "../components/MessageBubble.vue";
 import TheNavList from "../components/TheNavList.vue";
@@ -35,26 +40,27 @@ const signOutOfAccount = () => {
 }
 
 
-const loadAllMessages = async (recipientEmail = null) => {
-   if (recipientEmail) {
-      if (recipientEmail === recipient.value.email) return;
+const loadAllMessagesAndClearUnreadCounter = async (targetEmail = null) => {
+   if (targetEmail) {
+      if (targetEmail === recipient.value.email) return;
 
-      recipient.value = await getUserDetailsWithEmail(recipientEmail);
+      recipient.value = await getUserDetailsWithEmail(targetEmail);
    }
-   
+
+	const recipientIndex = usersContacted.value.findIndex(user => user.id === recipient.value.id);
+	const numOfUnreadMessages = usersContacted.value[recipientIndex].unread_counter;
 
    messages.value = [];
    registerMessageListener(sender.value.id, recipient.value.id);
-   
-   // console.log("Messages loaded: ");
-   // console.log(messages.value);
    
    watch(messages, () => {
       nextTick(() => {
          scrollToBottomOfMessages();
       });
    }, { immediate: true, deep: true });
-   
+
+	await incrementUnreadCounterWithContactedUser(sender.value.id, recipient.value.id, -1 * numOfUnreadMessages);
+	usersContacted.value[recipientIndex].unread_counter = 0;
 }
 
 
@@ -70,18 +76,20 @@ const sendMessage = async (keyEvent = null) => {
 	console.log(`HomePage.sendMessage() -> current date and time: ${currentDateAndTime} | ${currentDateTime}`);
 
    try {
-      const docRef = await addNewMessage(sender.value.id, recipient.value.id, newMessage.value, currentDateTime);
+      await addNewMessage(sender.value.id, recipient.value.id, newMessage.value, currentDateTime);
       newMessage.value = "";
 
-      // added the user to the userContacted list, if not present. This is done for both the sender and recipient accounts.
+      // if the recipient is not in the users_contacted list, add the user. This is done for both the sender and recipient user docs.
       if (!usersContacted.value.find(user => user.id === recipient.value.id)) {
          usersContacted.value.push(recipient.value);
          await addUserToUsersContacted(sender.value.id, recipient.value.id, recipient.value.username, recipient.value.email);
 			await addUserToUsersContacted(recipient.value.id, sender.value.id, sender.value.username, sender.value.email);
       }
+		else {
+			await incrementUnreadCounterWithContactedUser(recipient.value.id, sender.value.id, 1);
+		}
 
-      console.log(`HomePage.sendMessage() -> new message sent successfully! Doc ref:`);
-      console.log(docRef);
+      console.log(`HomePage.sendMessage() -> new message sent successfully!`);
    }
    catch (error) {
       console.error(`HomePage.sendMessage() -> failed to add message doc to db. Error code: ${error.code}`);
@@ -92,22 +100,14 @@ const sendMessage = async (keyEvent = null) => {
 }
 
 
-const newChat = (newRecipient) => {
-	console.log(`HomePage.newChat() -> new chat with: ${newRecipient}`);
-
-	recipient.value = newRecipient;
-	loadAllMessages();
+const newChat = (newRecipientEmail) => {
+	console.log(`HomePage.newChat() -> new chat with: ${newRecipientEmail}`);
+	loadAllMessagesAndClearUnreadCounter(newRecipientEmail);
 }
 
 
 const scrollToBottomOfMessages = () => {
 	window.scrollTo(0, document.body.scrollHeight);
-}
-
-
-const clearAllMessages = async () => {
-	await deleteAllMessages();
-	messages.value = [];
 }
 
 
@@ -136,7 +136,7 @@ onBeforeMount(async () => {
 		<TheNavList
 			:users-contacted="usersContacted"
 			:recipient="recipient"
-			:load-all-messages="loadAllMessages"
+			:load-all-messages="loadAllMessagesAndClearUnreadCounter"
 			:sign-out-of-account="signOutOfAccount"
 		></TheNavList>
 		<template v-slot:append>

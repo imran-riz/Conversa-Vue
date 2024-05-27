@@ -60,8 +60,8 @@ const signUp = async () => {
    console.log(`Values: ${state.emailAddress} | ${state.firstName} | ${state.lastName} | ${state.username} | ${state.birthdate}`);
 
    try {
-      await addNewUserAuth(state.emailAddress, state.password);
-      await addNewUser(state.emailAddress, state.firstName, state.lastName, state.username, state.birthdate);
+      await addNewUserAuth(state.emailAddress.trim(), state.password);
+      await addNewUser(state.emailAddress.trim(), state.firstName.trim(), state.lastName.trim(), state.username.toLowerCase().trim(), state.birthdate);
 
       errorMsg.value = "";
       console.log("SignUpPage.signUp() -> Document for new user created. Account creation successful!");

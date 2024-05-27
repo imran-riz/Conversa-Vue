@@ -1,5 +1,5 @@
 import { getApp } from "./firebase.js";
-import { addDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot, deleteDoc, limit } from "firebase/firestore";
+import { doc, addDoc, setDoc, updateDoc, collection, getDocs, getFirestore, and, or, orderBy, query, where, onSnapshot, deleteDoc, limit, increment } from "firebase/firestore";
 import { ref } from "vue";
 
 
@@ -23,7 +23,6 @@ const addNewUser = async (email, firstName, lastName, username, birthdate) => {
       const docRef = await addDoc(collection(db, "users"), userDoc);
 
       console.log(`chatapp_firebase.js addNewUser() -> user doc added. Doc reference returned.`);
-
       return docRef;
    } catch (error) {
       throw error;
@@ -63,6 +62,7 @@ const getContactedUsers = async (userId) => {
    querySnap.forEach((userDoc) => {
       contactedUsers.push(
          {
+            id: userDoc.id,
             ...userDoc.data()
          }
       );
@@ -94,14 +94,33 @@ const addNewMessage = async (senderId, recipientId, textMessage, sentOn) => {
 }
 
 
-const addUserToUsersContacted = async (senderId, recipientId, recipientUsername, recipientEmail) => {
+const addUserToUsersContacted = async (userId, contactedUserId, contactedUsername, contactedUserEmail) => {
+   const data = {
+      username: contactedUsername,
+      email: contactedUserEmail,
+      unread_counter: 0,
+   };
+
    try {
-      const refDoc = await addDoc(collection(db, `users/${senderId}/users_contacted`), {
-         id: recipientId,
-         username: recipientUsername,
-         email: recipientEmail,
+      await setDoc(
+         doc(db, "users", userId, "users_contacted", contactedUserId),
+         data
+      );
+
+      console.log("firebase_firestore.addUserToUsersContacted() -> a new contacted user was added.");
+   } catch (error) {
+      throw error;
+   }
+}
+
+
+const incrementUnreadCounterWithContactedUser = async (userId, contactedUserId, counter) => {
+   try {
+      const docRef = doc(db, "users", userId, "users_contacted", contactedUserId);
+      // console.log(recipientRef);
+      await updateDoc(docRef, {
+         unread_counter: increment(counter)
       });
-      console.log("new contacted user added");
    } catch (error) {
       throw error;
    }
@@ -227,6 +246,7 @@ export {
    getUserDetailsWithEmail,
    addNewMessage,
    addUserToUsersContacted,
+   incrementUnreadCounterWithContactedUser,
    registerMessageListener,
    deleteAllMessages,
    searchForUsers,
