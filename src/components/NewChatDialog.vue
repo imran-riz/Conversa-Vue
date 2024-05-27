@@ -15,7 +15,7 @@ const debouncedSearch = _.debounce(async () => {
 			return;
 		}
 
-		usersFound.value = await searchForUsers(searchUsername.value.toLowerCase());
+		usersFound.value = await searchForUsers(searchUsername.value.toLowerCase().trim());
 	},
 	150
 );
@@ -68,7 +68,7 @@ const debouncedSearch = _.debounce(async () => {
 							<v-list-item
 								v-for="user in usersFound" :key="user"
 								class="mb-1 pa-2 text-left"
-								@click="isActive.value = false; $emit('newChatWith', user);"
+								@click="isActive.value = false; $emit('newChatWith', user.email);"
 								prepend-icon="mdi-account"
 							>
 								<v-list-item-title>{{ user?.username }}</v-list-item-title>
