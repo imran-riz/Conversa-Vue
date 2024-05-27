@@ -14,7 +14,7 @@ A chat application that allows:
 - Vuetify (Material design 3)
 
 ### Data model:
-There are 2 collections used in Firestore: `users` and `messages`.
+I'm using 2 collections used in Firestore: `users` and `messages`.
 ```
 user: {
     id: string,
