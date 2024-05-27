@@ -9,9 +9,10 @@ A chat application that allows:
 
 
 ### Built with:
-- Vue3 with Composition API
-- Firebase: Auth and Firestore
-- Vuetify (Material design 3)
+- [Vue3](https://vuejs.org/) with Composition API
+- [Firebase](https://firebase.google.com/): Auth and Firestore
+- [Vuetify](https://vuetifyjs.com/en/getting-started/installation/#installation): used [Material Design](https://m3.material.io/)
+- [Vuelidate](https://vuelidate-next.netlify.app/)
 
 ### Data model:
 Uses 2 collections in Firestore: `users` and `messages`.
