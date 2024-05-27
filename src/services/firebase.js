@@ -7,12 +7,12 @@ let app = null;
 const initialiseFirebaseApp = () => {
    // the app's Firebase configuration
    const firebaseConfig = {
-      apiKey: "AIzaSyAPluxjfXIErNp0E61s04loQPHToWtdLhg",
-      authDomain: "vue-chat-app-365a2.firebaseapp.com",
-      projectId: "vue-chat-app-365a2",
-      storageBucket: "vue-chat-app-365a2.appspot.com",
-      messagingSenderId: "513558762397",
-      appId: "1:513558762397:web:77011cf532e573b1451574"
+      apiKey: import.meta.env.VITE_API_KEY,
+      authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+      projectId: import.meta.env.VITE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_APP_ID
    };
 
    app = initializeApp(firebaseConfig);
